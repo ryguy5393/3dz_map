@@ -68,7 +68,7 @@
                 let found = false;
 
                 map.data.forEach(feature => {
-                    if (feature.getProperty("zipcode") === zipcode) {
+                    if (feature.getProperty("ZIP3") === zipcode) {
                         found = true;
                         // Highlight the selected ZIP code
                         map.fitBounds(getFeatureBounds(feature));
