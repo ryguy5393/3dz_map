@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Digit ZIP Code Mapper</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        #map {
+            height: 90%;
+            width: 100%;
+        }
+        #search-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        #searchBox {
+            width: 300px;
+            padding: 8px;
+            font-size: 16px;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmPeFZJYVUi-_u5s7ZmFT5Swbr2OM0GoI"></script>
+</head>
+<body>
+    <div id="search-container">
+        <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP code (e.g., 902)">
+    </div>
+    <div id="map"></div>
+
+    <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 4,
+                center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
+            });
+
+            // Load GeoJSON for 3-digit ZIP codes
+            map.data.loadGeoJson("path-to-your-geojson-file.json");
+
+            // Style the boundaries
+            map.data.setStyle({
+                fillColor: "blue",
+                fillOpacity: 0.1,
+                strokeColor: "black",
+                strokeWeight: 1,
+            });
+
+            // Search functionality
+            const searchBox = document.getElementById("searchBox");
+
+            searchBox.addEventListener("change", () => {
+                const zipcode = searchBox.value.trim();
+
+                let found = false;
+
+                map.data.forEach(feature => {
+                    if (feature.getProperty("zipcode") === zipcode) {
+                        found = true;
+                        // Highlight the selected ZIP code
+                        map.fitBounds(getFeatureBounds(feature));
+                        map.data.overrideStyle(feature, {
+                            fillColor: "red",
+                            fillOpacity: 0.4,
+                        });
+                    } else {
+                        // Reset style for non-selected features
+                        map.data.overrideStyle(feature, null);
+                    }
+                });
+
+                if (!found) {
+                    alert("ZIP code not found.");
+                }
+            });
+        }
+
+        // Helper function to get bounds of a GeoJSON feature
+        function getFeatureBounds(feature) {
+            const bounds = new google.maps.LatLngBounds();
+            feature.getGeometry().forEachLatLng(latlng => {
+                bounds.extend(latlng);
+            });
+            return bounds;
+        }
+
+        // Initialize the map when the page loads
+        window.onload = initMap;
+    </script>
+</body>
+</html>
