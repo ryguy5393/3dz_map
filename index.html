@@ -139,7 +139,7 @@
             isThreeDigitView = !isThreeDigitView;
             currentGeoJSON = isThreeDigitView ? 
                 "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson" :
-                "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/usa_zip_codes_geo_100m.json";
+                "https://github.com/ryguy5393/3dz_map/raw/main/usa_zip_codes_geo_100m.json";
             document.getElementById("toggleZipView").textContent = isThreeDigitView ? "Switch to 5-Digit ZIPs" : "Switch to 3-Digit ZIPs";
             loadGeoJSON(currentGeoJSON);
         }
