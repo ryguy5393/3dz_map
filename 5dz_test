@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test 5-Digit ZIP Code Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=IzaSyDmPeFZJYVUi-_u5s7ZmFT5Swbr2OM0GoI"></script>
+    <style>
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h3>Testing 5-Digit ZIP Code Map</h3>
+    <div id="map"></div>
+
+    <script>
+        function initMap() {
+            var map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 4,
+                center: { lat: 39.8283, lng: -98.5795 }, // Center on USA
+            });
+
+            map.data.loadGeoJson("https://storage.cloud.google.com/geojson_5dz_data/usa_zip_codes_geo_100m%20(2).json");
+
+            map.data.setStyle({
+                fillColor: "blue",
+                fillOpacity: 0.1,
+                strokeColor: "black",
+                strokeWeight: 1
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
