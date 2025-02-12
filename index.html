@@ -106,8 +106,8 @@
         }
 
         function loadGeoJSON(url) {
-            map.data.forEach(feature => map.data.remove(feature));
-            map.data.loadGeoJson(url);
+            map.data.forEach(feature => map.data.remove(feature)); // Clear previous data
+            map.data.loadGeoJson(url); // Load new GeoJSON
             map.data.setStyle({ fillColor: "blue", fillOpacity: 0.1, strokeColor: "black", strokeWeight: 1 });
 
             map.data.addListener("mouseover", event => {
@@ -141,7 +141,7 @@
                 "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson" :
                 "https://storage.cloud.google.com/geojson_5dz_data/usa_zip_codes_geo_100m%20(2).json";
             document.getElementById("toggleZipView").textContent = isThreeDigitView ? "Switch to 5-Digit ZIPs" : "Switch to 3-Digit ZIPs";
-            loadGeoJSON(currentGeoJSON);
+            loadGeoJSON(currentGeoJSON); // Reload data based on current view
         }
 
         function batchSearch() {
