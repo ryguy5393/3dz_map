@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZIP Code Mapper</title>
+    <title>3-Digit ZIP Code Mapper</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
-            background-color: black;
+            background-color: black; /* Black background */
             color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
         #container {
             position: relative;
-            width: 90%;
-            height: 90%;
+            width: 90%; /* Map container width */
+            height: 90%; /* Map container height */
         }
         #controls {
             position: absolute;
@@ -31,11 +30,10 @@
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            color: black;
         }
         #map {
-            width: 100%;
-            height: 100%;
+            width: 100%; /* Map fills the container */
+            height: 100%; /* Map fills the container */
         }
         #infoBox {
             margin-top: 10px;
@@ -48,27 +46,17 @@
             background: #f9f9f9;
             color: black;
         }
-        button, select {
-            margin-top: 5px;
-            padding: 5px;
+        button {
+            margin-top: 10px;
         }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmPeFZJYVUi-_u5s7ZmFT5Swbr2OM0GoI"></script>
 </head>
 <body>
     <div id="container">
         <div id="controls">
-            <input id="searchBox" type="text" placeholder="Enter ZIP(s) (e.g., 123,456)">
+            <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP code (e.g., 902)">
             <button id="clearButton">Clear Selections</button>
-            <button id="toggleZipView">Switch to 5-Digit ZIPs</button>
-            <div>
-                <label for="carrierSelect">Select Carrier:</label>
-                <select id="carrierSelect">
-                    <option value="">None</option>
-                    <option value="CarrierA">Carrier A</option>
-                </select>
-            </div>
-            <input id="laneSearch" type="text" placeholder="Search Lane (e.g., 123-456)">
             <div id="infoBox">Selected ZIPs will appear here.</div>
         </div>
         <div id="map"></div>
@@ -77,51 +65,69 @@
     <script>
         let map;
         let selectedZips = [];
-        let currentGeoJSON = "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson";
-        let isThreeDigitView = true;
-        let carrierData = {
-            "CarrierA": [
-                { origin: "123", dest: "456", rate: "$2.50" },
-                { origin: "789", dest: "321", rate: "$3.10" }
-            ]
-        };
 
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
-                center: { lat: 39.8283, lng: -98.5795 },
+                center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
                 mapTypeControl: true,
-                mapTypeControlOptions: { style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR, position: google.maps.ControlPosition.BOTTOM_LEFT },
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                    position: google.maps.ControlPosition.BOTTOM_LEFT,
+                },
                 fullscreenControl: true,
-                fullscreenControlOptions: { position: google.maps.ControlPosition.BOTTOM_LEFT },
+                fullscreenControlOptions: {
+                    position: google.maps.ControlPosition.BOTTOM_LEFT,
+                },
             });
 
-            loadGeoJSON(currentGeoJSON);
+            // Load the GeoJSON data for ZIP codes
+            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
 
-            document.getElementById("toggleZipView").addEventListener("click", toggleZipView);
-            document.getElementById("searchBox").addEventListener("change", batchSearch);
-            document.getElementById("clearButton").addEventListener("click", clearSelections);
-            document.getElementById("carrierSelect").addEventListener("change", highlightCarrierZips);
-            document.getElementById("laneSearch").addEventListener("change", searchLane);
-        }
+            // Set a default style for all ZIP code polygons
+            map.data.setStyle({
+                fillColor: 'blue', // Default fill color for ZIP codes
+                fillOpacity: 0.1, // Slight transparency
+                strokeColor: 'black', // Border color
+                strokeWeight: 1, // Border width
+            });
 
-        function loadGeoJSON(url) {
-            map.data.forEach(feature => map.data.remove(feature));
-            map.data.loadGeoJson(url);
-            map.data.setStyle({ fillColor: "blue", fillOpacity: 0.1, strokeColor: "black", strokeWeight: 1 });
+            // Add click functionality to select/deselect ZIPs
+            map.data.addListener("click", event => {
+                const zipCode = event.feature.getProperty("ZIP3");
+                if (selectedZips.includes(zipCode)) {
+                    // Deselect the ZIP code
+                    selectedZips = selectedZips.filter(zip => zip !== zipCode);
+                    map.data.overrideStyle(event.feature, {
+                        fillColor: 'blue',
+                        fillOpacity: 0.1,
+                        strokeColor: 'black',
+                        strokeWeight: 1,
+                    });
+                } else {
+                    // Select the ZIP code
+                    selectedZips.push(zipCode);
+                    map.data.overrideStyle(event.feature, {
+                        fillColor: 'red',
+                        fillOpacity: 0.4,
+                    });
+                }
+                updateInfoBox();
+            });
 
+            // Add hover functionality to display tooltips with ZIP information
             map.data.addListener("mouseover", event => {
-                const zip = event.feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5");
+                const zip = event.feature.getProperty("ZIP3");
                 if (zip) {
                     const tooltip = document.createElement("div");
                     tooltip.id = "tooltip";
-                    tooltip.style.position = "absolute";
-                    tooltip.style.backgroundColor = "white";
-                    tooltip.style.color = "black";
-                    tooltip.style.border = "1px solid black";
-                    tooltip.style.padding = "5px";
-                    tooltip.style.borderRadius = "5px";
-                    tooltip.style.pointerEvents = "none";
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.backgroundColor = 'white';
+                    tooltip.style.color = 'black';
+                    tooltip.style.border = '1px solid black';
+                    tooltip.style.padding = '5px';
+                    tooltip.style.borderRadius = '5px';
+                    tooltip.style.pointerEvents = 'none';
                     tooltip.style.top = `${event.domEvent.pageY + 10}px`;
                     tooltip.style.left = `${event.domEvent.pageX + 10}px`;
                     tooltip.textContent = `ZIP: ${zip}`;
@@ -131,58 +137,82 @@
 
             map.data.addListener("mouseout", () => {
                 const tooltip = document.getElementById("tooltip");
-                if (tooltip) document.body.removeChild(tooltip);
-            });
-        }
-
-        function toggleZipView() {
-            isThreeDigitView = !isThreeDigitView;
-            currentGeoJSON = isThreeDigitView ? 
-                "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson" :
-                "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/5_digit_zip_boundaries.geojson";
-            document.getElementById("toggleZipView").textContent = isThreeDigitView ? "Switch to 5-Digit ZIPs" : "Switch to 3-Digit ZIPs";
-            loadGeoJSON(currentGeoJSON);
-        }
-
-        function batchSearch() {
-            const zipCodes = document.getElementById("searchBox").value.split(",").map(z => z.trim());
-            zipCodes.forEach(zip => highlightZip(zip));
-        }
-
-        function highlightZip(zip) {
-            map.data.forEach(feature => {
-                if (feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5") === zip) {
-                    map.data.overrideStyle(feature, { fillColor: "red", fillOpacity: 0.4 });
-                    if (!selectedZips.includes(zip)) selectedZips.push(zip);
+                if (tooltip) {
+                    document.body.removeChild(tooltip);
                 }
             });
-            updateInfoBox();
+
+            map.data.addListener("mousemove", event => {
+                const tooltip = document.getElementById("tooltip");
+                if (tooltip) {
+                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
+                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
+                }
+            });
+
+            // Search functionality
+            const searchBox = document.getElementById("searchBox");
+            searchBox.addEventListener("change", () => {
+                const zipcode = searchBox.value.trim();
+                let found = false;
+                map.data.forEach(feature => {
+                    if (feature.getProperty("ZIP3") === zipcode) {
+                        found = true;
+                        map.fitBounds(getFeatureBounds(feature));
+                        map.data.overrideStyle(feature, {
+                            fillColor: 'red',
+                            fillOpacity: 0.4,
+                        });
+                        if (!selectedZips.includes(zipcode)) {
+                            selectedZips.push(zipcode);
+                        }
+                    }
+                });
+
+                if (!found) {
+                    alert("ZIP code not found.");
+                }
+
+                updateInfoBox();
+            });
+
+            document.getElementById("clearButton").addEventListener("click", clearSelections);
         }
 
-        function highlightCarrierZips() {
-            clearSelections();
-            const carrier = document.getElementById("carrierSelect").value;
-            if (!carrier) return;
-            carrierData[carrier].forEach(data => { highlightZip(data.origin); highlightZip(data.dest); });
+        // Helper function to get bounds of a GeoJSON feature
+        function getFeatureBounds(feature) {
+            const bounds = new google.maps.LatLngBounds();
+            feature.getGeometry().forEachLatLng(latlng => {
+                bounds.extend(latlng);
+            });
+            return bounds;
         }
 
-        function searchLane() {
-            const [orig, dest] = document.getElementById("laneSearch").value.split("-");
-            const carrier = document.getElementById("carrierSelect").value;
-            const rate = carrierData[carrier]?.find(r => r.origin === orig && r.dest === dest)?.rate || "No data";
-            alert(`Rate for ${orig}-${dest}: ${rate}`);
+        // Update the info box with the list of selected ZIP codes
+        function updateInfoBox() {
+            const infoBox = document.getElementById("infoBox");
+            if (selectedZips.length === 0) {
+                infoBox.innerText = "No ZIP codes selected.";
+            } else {
+                infoBox.innerText = "Selected ZIPs: " + selectedZips.join(", ");
+            }
         }
 
+        // Clear all selections
         function clearSelections() {
-            map.data.forEach(feature => map.data.overrideStyle(feature, { fillColor: "blue", fillOpacity: 0.1 }));
+            map.data.forEach(feature => {
+                map.data.overrideStyle(feature, {
+                    fillColor: 'blue',
+                    fillOpacity: 0.1,
+                    strokeColor: 'black',
+                    strokeWeight: 1,
+                });
+            });
             selectedZips = [];
             updateInfoBox();
         }
 
-        function updateInfoBox() {
-            document.getElementById("infoBox").innerText = selectedZips.length ? "Selected ZIPs: " + selectedZips.join(", ") : "No ZIP codes selected.";
-        }
-
+        // Initialize the map when the page loads
         window.onload = initMap;
     </script>
 </body>
