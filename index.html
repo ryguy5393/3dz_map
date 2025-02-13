@@ -77,8 +77,9 @@
     <script>
         let map;
         let selectedZips = [];
-        let currentGeoJSON = "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson";
         let isThreeDigitView = true;
+        let currentGeoJSON = "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson";
+
         let carrierData = {
             "CarrierA": [
                 { origin: "123", dest: "456", rate: "$2.50" },
@@ -106,32 +107,27 @@
         }
 
         function loadGeoJSON(url) {
-            map.data.forEach(feature => map.data.remove(feature)); // Clear previous data
-            map.data.loadGeoJson(url); // Load new GeoJSON
-            map.data.setStyle({ fillColor: "blue", fillOpacity: 0.1, strokeColor: "black", strokeWeight: 1 });
+            map.data.forEach(feature => map.data.remove(feature)); // Clear existing data
+            map.data.loadGeoJson(url, {}, function() {
+                console.log("GeoJSON loaded:", url);
 
-            map.data.addListener("mouseover", event => {
-                const zip = event.feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5");
-                if (zip) {
-                    const tooltip = document.createElement("div");
-                    tooltip.id = "tooltip";
-                    tooltip.style.position = "absolute";
-                    tooltip.style.backgroundColor = "white";
-                    tooltip.style.color = "black";
-                    tooltip.style.border = "1px solid black";
-                    tooltip.style.padding = "5px";
-                    tooltip.style.borderRadius = "5px";
-                    tooltip.style.pointerEvents = "none";
-                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
-                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
-                    tooltip.textContent = `ZIP: ${zip}`;
-                    document.body.appendChild(tooltip);
-                }
-            });
+                map.data.setStyle({ fillColor: "blue", fillOpacity: 0.1, strokeColor: "black", strokeWeight: 1 });
 
-            map.data.addListener("mouseout", () => {
-                const tooltip = document.getElementById("tooltip");
-                if (tooltip) document.body.removeChild(tooltip);
+                map.data.addListener("click", event => {
+                    const zip = event.feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5");
+                    if (zip) {
+                        highlightZip(zip);
+                    }
+                });
+
+                map.data.addListener("mouseover", event => {
+                    const zip = event.feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5");
+                    if (zip) {
+                        showTooltip(event, `ZIP: ${zip}`);
+                    }
+                });
+
+                map.data.addListener("mouseout", () => removeTooltip());
             });
         }
 
@@ -139,9 +135,10 @@
             isThreeDigitView = !isThreeDigitView;
             currentGeoJSON = isThreeDigitView ? 
                 "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson" :
-                "https://storage.googleapis.com/geojson_5dz_data/usa_zip_codes_geo_100m%20(2).json";
+                "https://storage.googleapis.com/geojson_5dz_data/usa_zip_codes_geo_100m.json"; // Updated URL format
+
             document.getElementById("toggleZipView").textContent = isThreeDigitView ? "Switch to 5-Digit ZIPs" : "Switch to 3-Digit ZIPs";
-            loadGeoJSON(currentGeoJSON); // Reload data based on current view
+            loadGeoJSON(currentGeoJSON);
         }
 
         function batchSearch() {
@@ -183,7 +180,16 @@
             document.getElementById("infoBox").innerText = selectedZips.length ? "Selected ZIPs: " + selectedZips.join(", ") : "No ZIP codes selected.";
         }
 
+        function showTooltip(event, text) {
+            console.log(text); // Debug tooltip
+        }
+
+        function removeTooltip() {
+            console.log("Tooltip removed");
+        }
+
         window.onload = initMap;
     </script>
 </body>
 </html>
+
