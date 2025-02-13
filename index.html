@@ -53,7 +53,7 @@
             padding: 5px;
         }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmPeFZJYVUi-_u5s7ZmFT5Swbr2OM0GoI"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
 </head>
 <body>
     <div id="container">
@@ -111,8 +111,8 @@
             map.data.setStyle({ fillColor: "blue", fillOpacity: 0.1, strokeColor: "black", strokeWeight: 1 });
 
             map.data.addListener("mouseover", event => {
-                const zipcode = event.feature.getProperty("zipcode");
-                if (zipcode) {
+                const zip = event.feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5");
+                if (zip) {
                     const tooltip = document.createElement("div");
                     tooltip.id = "tooltip";
                     tooltip.style.position = "absolute";
@@ -124,7 +124,7 @@
                     tooltip.style.pointerEvents = "none";
                     tooltip.style.top = `${event.domEvent.pageY + 10}px`;
                     tooltip.style.left = `${event.domEvent.pageX + 10}px`;
-                    tooltip.textContent = `ZIP: ${zipcode}`;
+                    tooltip.textContent = `ZIP: ${zip}`;
                     document.body.appendChild(tooltip);
                 }
             });
@@ -133,20 +133,13 @@
                 const tooltip = document.getElementById("tooltip");
                 if (tooltip) document.body.removeChild(tooltip);
             });
-
-            map.data.addListener("click", event => {
-                const zipcode = event.feature.getProperty("zipcode");
-                if (zipcode) {
-                    highlightZip(zipcode);
-                }
-            });
         }
 
         function toggleZipView() {
             isThreeDigitView = !isThreeDigitView;
             currentGeoJSON = isThreeDigitView ? 
                 "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson" :
-                "https://storage.cloud.google.com/geojson_5dz_data/usa_zip_codes_geo_100m%20(2).json";
+                "https://raw.githubusercontent.com/ryguy5393/3dz_map/main/5_digit_zip_boundaries.geojson";
             document.getElementById("toggleZipView").textContent = isThreeDigitView ? "Switch to 5-Digit ZIPs" : "Switch to 3-Digit ZIPs";
             loadGeoJSON(currentGeoJSON);
         }
@@ -158,7 +151,7 @@
 
         function highlightZip(zip) {
             map.data.forEach(feature => {
-                if (feature.getProperty("zipcode") === zip) {
+                if (feature.getProperty(isThreeDigitView ? "ZIP3" : "ZIP5") === zip) {
                     map.data.overrideStyle(feature, { fillColor: "red", fillOpacity: 0.4 });
                     if (!selectedZips.includes(zip)) selectedZips.push(zip);
                 }
