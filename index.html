@@ -426,11 +426,37 @@
         let overlappingZips = [];
         let selectedZips = [];
 
-        const carrierData = [];
-        let pickupZips = [];
-        let deliverZips = [];
-        let overlappingZips = [];
+        // Function to extract ZIP codes from the hidden table
+function extractCarrierData() {
+    pickupZips = [];
+    deliverZips = [];
+    overlappingZips = [];
 
+     const rows = document.querySelectorAll("#carrierDataTable tbody tr");
+    rows.forEach(row => {
+        const columns = row.querySelectorAll("td");
+        if (columns.length === 2) {
+            const pickup = columns[0].textContent.trim();
+            const deliver = columns[1].textContent.trim();
+
+            if (pickup) pickupZips.push(pickup);
+            if (deliver) deliverZips.push(deliver);
+
+            if (pickup && deliver && pickup === deliver) {
+                overlappingZips.push(pickup);
+            }
+         }
+    });
+
+    console.log("Pickup ZIPs:", pickupZips);
+    console.log("Deliver ZIPs:", deliverZips);
+    console.log("Overlapping ZIPs:", overlappingZips);
+}
+
+// Call this function after the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+    extractCarrierData();
+});
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
