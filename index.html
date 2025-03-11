@@ -431,25 +431,29 @@ function extractCarrierData() {
     pickupZips = [];
     deliverZips = [];
     overlappingZips = [];
- // Update with the correct table ID (e.g., "carrierDataTable")
-    const table = document.getElementById("carrierDataTable");  // Replace "carrierDataTable" with your actual table ID
+ // Get the table and its rows
+    const table = document.getElementById("carrierDataTable");  
+    const rows = table.querySelectorAll("tbody tr");
     
-     const rows = document.querySelectorAll("#carrierDataTable tbody tr");
-    rows.forEach(row => {
+      rows.forEach(row => {
         const columns = row.querySelectorAll("td");
+        
+        // Assuming Pickup is in the first column and Delivery is in the second
         if (columns.length === 2) {
-            const pickup = columns[0].textContent.trim();
-            const deliver = columns[1].textContent.trim();
+            const pickupZip = columns[0].textContent.trim();
+            const deliverZip = columns[1].textContent.trim();
 
-            if (pickup) pickupZips.push(pickup);
-            if (deliver) deliverZips.push(deliver);
+            // Add to the pickup and delivery arrays
+            pickupZips.push(pickupZip);
+            deliverZips.push(deliverZip);
 
-            if (pickup && deliver && pickup === deliver) {
-                overlappingZips.push(pickup);
+            // Check if both pickup and delivery ZIPs are the same (overlap)
+            if (pickupZip === deliverZip) {
+                overlappingZips.push(pickupZip);
             }
-         }
+        }
     });
-
+    
     console.log("Pickup ZIPs:", pickupZips);
     console.log("Deliver ZIPs:", deliverZips);
     console.log("Overlapping ZIPs:", overlappingZips);
