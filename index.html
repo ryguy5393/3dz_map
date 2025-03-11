@@ -431,7 +431,9 @@ function extractCarrierData() {
     pickupZips = [];
     deliverZips = [];
     overlappingZips = [];
-
+ // Update with the correct table ID (e.g., "carrierDataTable")
+    const table = document.getElementById("carrierDataTable");  // Replace "carrierDataTable" with your actual table ID
+    
      const rows = document.querySelectorAll("#carrierDataTable tbody tr");
     rows.forEach(row => {
         const columns = row.querySelectorAll("td");
