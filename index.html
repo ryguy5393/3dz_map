@@ -419,75 +419,85 @@
 </table>
 
     
-    <script>
-        let map;
-        let pickupZips = [];
-        let deliverZips = [];
-        let overlappingZips = [];
-        let selectedZips = [];
+ <script>
+    // Define the initMap function before loading Google Maps API
+    function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 4,
+            center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
+            mapTypeControl: true,
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                position: google.maps.ControlPosition.BOTTOM_LEFT,
+            },
+            fullscreenControl: true,
+            fullscreenControlOptions: {
+                position: google.maps.ControlPosition.BOTTOM_LEFT,
+            },
+        });
 
-        // Function to extract ZIP codes from the hidden table
-function extractCarrierData() {
-    pickupZips = [];
-    deliverZips = [];
-    overlappingZips = [];
- // Get the table and its rows
-    const table = document.getElementById("carrierDataTable");  
-    const rows = table.querySelectorAll("tbody tr");
-    
-      rows.forEach(row => {
-        const columns = row.querySelectorAll("td");
-        
-        // Assuming Pickup is in the first column and Delivery is in the second
-        if (columns.length === 2) {
-            const pickupZip = columns[0].textContent.trim();
-            const deliverZip = columns[1].textContent.trim();
+        // Load the GeoJSON data for ZIP codes
+        map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
 
-            // Add to the pickup and delivery arrays
-            pickupZips.push(pickupZip);
-            deliverZips.push(deliverZip);
+        // Set a default style for all ZIP code polygons
+        map.data.setStyle({
+            fillColor: 'blue', // Default fill color for ZIP codes
+            fillOpacity: 0.1, // Slight transparency
+            strokeColor: 'black', // Border color
+            strokeWeight: 1, // Border width
+        });
+    }
 
-            // Check if both pickup and delivery ZIPs are the same (overlap)
-            if (pickupZip === deliverZip) {
-                overlappingZips.push(pickupZip);
+    // Define other functions here
+    let map;
+    let pickupZips = [];
+    let deliverZips = [];
+    let overlappingZips = [];
+    let selectedZips = [];
+
+    // Function to extract ZIP codes from the hidden table
+    function extractCarrierData() {
+        pickupZips = [];
+        deliverZips = [];
+        overlappingZips = [];
+
+        // Get the table and its rows
+        const table = document.getElementById("carrierDataTable");
+        const rows = table.querySelectorAll("tbody tr");
+
+        rows.forEach(row => {
+            const columns = row.querySelectorAll("td");
+
+            // Assuming Pickup is in the first column and Delivery is in the second
+            if (columns.length === 2) {
+                const pickupZip = columns[0].textContent.trim();
+                const deliverZip = columns[1].textContent.trim();
+
+                // Add to the pickup and delivery arrays
+                pickupZips.push(pickupZip);
+                deliverZips.push(deliverZip);
+
+                // Check if both pickup and delivery ZIPs are the same (overlap)
+                if (pickupZip === deliverZip) {
+                    overlappingZips.push(pickupZip);
+                }
             }
-        }
+        });
+
+        console.log("Pickup ZIPs:", pickupZips);
+        console.log("Deliver ZIPs:", deliverZips);
+        console.log("Overlapping ZIPs:", overlappingZips);
+    }
+
+    // Call this function after the DOM is fully loaded
+    document.addEventListener("DOMContentLoaded", () => {
+        extractCarrierData();
     });
-    
-    console.log("Pickup ZIPs:", pickupZips);
-    console.log("Deliver ZIPs:", deliverZips);
-    console.log("Overlapping ZIPs:", overlappingZips);
-}
+</script>
 
-// Call this function after the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => {
-    extractCarrierData();
-});
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 4,
-                center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
-                mapTypeControl: true,
-                mapTypeControlOptions: {
-                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                    position: google.maps.ControlPosition.BOTTOM_LEFT,
-                },
-                fullscreenControl: true,
-                fullscreenControlOptions: {
-                    position: google.maps.ControlPosition.BOTTOM_LEFT,
-                },
-            });
+<!-- Load the Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
 
-            // Load the GeoJSON data for ZIP codes
-            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
-
-            // Set a default style for all ZIP code polygons
-            map.data.setStyle({
-                fillColor: 'blue', // Default fill color for ZIP codes
-                fillOpacity: 0.1, // Slight transparency
-                strokeColor: 'black', // Border color
-                strokeWeight: 1, // Border width
-            });
 
             // Add click functionality to select/deselect ZIPs
             map.data.addListener("click", event => {
