@@ -30,12 +30,13 @@
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            width: 300px;
         }
         #map {
             width: 100%;
             height: 100%;
         }
-        #infoBox {
+        .infoBox {
             margin-top: 10px;
             font-size: 14px;
             max-height: 100px;
@@ -48,6 +49,7 @@
         }
         button {
             margin-top: 10px;
+            width: 100%;
         }
         #carrierDataTable {
             display: none; /* Keep the table hidden */
@@ -67,7 +69,9 @@
             <option value="veterans">Veteran's</option>
         </select>
         <button id="clearButton">Clear All Selections</button>
-        <div id="infoBox">Selected ZIPs will appear here.</div>
+
+        <div id="manualSelectionBox" class="infoBox"><b>Selected ZIPs:</b> None</div>
+        <div id="carrierSelectionBox" class="infoBox"><b>Carrier ZIPs:</b> None</div>
     </div>
 
     <table id="carrierDataTable">
@@ -75,7 +79,7 @@
             <tr><th>Pickup</th><th>Deliver</th></tr>
         </thead>
         <tbody>
-             <tr>
+            <tr>
       <td>452</td>
       <td>452</td>
     </tr>
@@ -420,6 +424,7 @@
         let pickupZips = new Set();
         let deliverZips = new Set();
         let overlappingZips = new Set();
+        let currentCarrier = null; // Tracks the selected carrier
 
         function initMap() {
             console.log("Google Maps API Loaded Successfully!");
@@ -431,14 +436,7 @@
                 fullscreenControl: true,
             });
 
-            // Load ZIP Code Boundaries
-            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson', null, function(features) {
-                if (features.length === 0) {
-                    console.error("🚨 GeoJSON failed to load!");
-                } else {
-                    console.log("✅ GeoJSON Loaded Successfully!");
-                }
-            });
+            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
 
             map.data.setStyle({
                 fillColor: 'blue',
@@ -447,21 +445,21 @@
                 strokeWeight: 1,
             });
 
-            // Allow users to manually select ZIPs by clicking
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3").toString();
-                toggleZipSelection(zipCode);
+                toggleManualSelection(zipCode);
             });
 
             document.getElementById("carrierSelect").addEventListener("change", function() {
                 if (this.value === "veterans") {
+                    currentCarrier = "veterans";
                     highlightCarrierZips();
                 } else {
-                    clearSelections();
+                    clearCarrierSelection();
                 }
             });
 
-            document.getElementById("clearButton").addEventListener("click", clearSelections);
+            document.getElementById("clearButton").addEventListener("click", clearAllSelections);
 
             loadCarrierData();
         }
@@ -471,9 +469,7 @@
             deliverZips.clear();
             overlappingZips.clear();
 
-            const table = document.getElementById("carrierDataTable");
-            const rows = table.querySelectorAll("tbody tr");
-
+            const rows = document.querySelectorAll("#carrierDataTable tbody tr");
             rows.forEach(row => {
                 const pickupZip = row.cells[0].textContent.trim();
                 const deliverZip = row.cells[1].textContent.trim();
@@ -490,7 +486,6 @@
         function highlightCarrierZips() {
             map.data.forEach(feature => {
                 const zip = feature.getProperty("ZIP3").toString();
-
                 if (overlappingZips.has(zip)) {
                     map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
                 } else if (pickupZips.has(zip) && !deliverZips.has(zip)) {
@@ -500,44 +495,42 @@
                 }
             });
 
-            updateInfoBox();
+            updateCarrierInfo();
         }
 
-        function toggleZipSelection(zipCode) {
+        function toggleManualSelection(zipCode) {
             if (selectedZips.has(zipCode)) {
                 selectedZips.delete(zipCode);
-                map.data.overrideStyle(map.data.getFeatureById(zipCode), {
-                    fillColor: 'blue', fillOpacity: 0.1
-                });
             } else {
                 selectedZips.add(zipCode);
-                map.data.overrideStyle(map.data.getFeatureById(zipCode), {
-                    fillColor: 'red', fillOpacity: 0.5
-                });
             }
-
-            updateInfoBox();
+            updateManualInfo();
         }
 
-        function updateInfoBox() {
-            document.getElementById("infoBox").innerText = selectedZips.size
-                ? "Selected ZIPs: " + Array.from(selectedZips).join(", ")
-                : "No ZIP codes selected.";
+        function updateManualInfo() {
+            document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${selectedZips.size ? Array.from(selectedZips).join(", ") : "None"}`;
         }
 
-        function clearSelections() {
+        function updateCarrierInfo() {
+            document.getElementById("carrierSelectionBox").innerHTML = `
+                <b>Pickup (Green):</b> ${Array.from(pickupZips).join(", ") || "None"}<br>
+                <b>Delivery (Blue):</b> ${Array.from(deliverZips).join(", ") || "None"}<br>
+                <b>Both (Purple):</b> ${Array.from(overlappingZips).join(", ") || "None"}
+            `;
+        }
+
+        function clearCarrierSelection() {
+            currentCarrier = null;
+            map.data.revertStyle();
+            document.getElementById("carrierSelectionBox").innerHTML = "<b>Carrier ZIPs:</b> None";
+        }
+
+        function clearAllSelections() {
             selectedZips.clear();
-            pickupZips.clear();
-            deliverZips.clear();
-            overlappingZips.clear();
-
-            document.getElementById("carrierSelect").value = ""; // Reset carrier selection
-
-            map.data.forEach(feature => map.data.overrideStyle(feature, {
-                fillColor: 'blue', fillOpacity: 0.1, strokeColor: 'black', strokeWeight: 1
-            }));
-
-            updateInfoBox();
+            clearCarrierSelection();
+            document.getElementById("carrierSelect").value = "";
+            map.data.revertStyle();
+            updateManualInfo();
         }
     </script>
 
