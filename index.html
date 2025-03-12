@@ -58,7 +58,7 @@
     </div>
     
     <div id="controls">
-        <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP code (e.g., 902)">
+        <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP(s), e.g., 902, 303, 606">
         <select id="carrierSelect">
             <option value="">Select Carrier</option>
             <option value="veterans">Veteran's</option>
@@ -100,27 +100,65 @@
             // Click event for selecting ZIP codes
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3");
-                console.log("Clicked ZIP Code:", zipCode);
+                toggleZipSelection(zipCode, event.feature);
+            });
 
-                if (selectedZips.includes(zipCode)) {
-                    selectedZips = selectedZips.filter(zip => zip !== zipCode);
-                    map.data.overrideStyle(event.feature, {
-                        fillColor: 'blue',
-                        fillOpacity: 0.1,
-                        strokeColor: 'black',
-                        strokeWeight: 1,
-                    });
-                } else {
-                    selectedZips.push(zipCode);
-                    map.data.overrideStyle(event.feature, {
-                        fillColor: 'red',
-                        fillOpacity: 0.4,
-                    });
+            // Search functionality - Press Enter to highlight ZIPs
+            document.getElementById("searchBox").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault(); // Prevent form submission
+                    searchZipCodes();
                 }
-                updateInfoBox();
             });
 
             document.getElementById("clearButton").addEventListener("click", clearSelections);
+        }
+
+        function toggleZipSelection(zipCode, feature = null) {
+            if (selectedZips.includes(zipCode)) {
+                selectedZips = selectedZips.filter(zip => zip !== zipCode);
+                map.data.forEach(f => {
+                    if (f.getProperty("ZIP3") === zipCode) {
+                        map.data.overrideStyle(f, {
+                            fillColor: 'blue',
+                            fillOpacity: 0.1,
+                            strokeColor: 'black',
+                            strokeWeight: 1,
+                        });
+                    }
+                });
+            } else {
+                selectedZips.push(zipCode);
+                map.data.forEach(f => {
+                    if (f.getProperty("ZIP3") === zipCode) {
+                        map.data.overrideStyle(f, {
+                            fillColor: 'red',
+                            fillOpacity: 0.4,
+                        });
+                    }
+                });
+            }
+            updateInfoBox();
+        }
+
+        function searchZipCodes() {
+            let input = document.getElementById("searchBox").value.trim();
+            if (!input) return;
+
+            let zipArray = input.split(",").map(zip => zip.trim()); // Split input by commas and trim spaces
+            let foundZips = [];
+
+            map.data.forEach(feature => {
+                let zipCode = feature.getProperty("ZIP3");
+                if (zipArray.includes(zipCode)) {
+                    foundZips.push(zipCode);
+                    toggleZipSelection(zipCode, feature);
+                }
+            });
+
+            if (foundZips.length === 0) {
+                alert("No matching ZIP codes found.");
+            }
         }
 
         function updateInfoBox() {
@@ -138,7 +176,7 @@
         }
     </script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 
 </body>
 </html>
