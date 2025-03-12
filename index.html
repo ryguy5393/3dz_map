@@ -79,7 +79,7 @@
             <tr><th>Pickup</th><th>Deliver</th></tr>
         </thead>
         <tbody>
-            <tr>
+           <tr>
       <td>452</td>
       <td>452</td>
     </tr>
@@ -445,9 +445,10 @@
                 strokeWeight: 1,
             });
 
+            // Enable clicking to highlight ZIPs in red
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3").toString();
-                toggleManualSelection(zipCode);
+                toggleManualSelection(zipCode, event.feature);
             });
 
             document.getElementById("carrierSelect").addEventListener("change", function() {
@@ -486,51 +487,52 @@
         function highlightCarrierZips() {
             map.data.forEach(feature => {
                 const zip = feature.getProperty("ZIP3").toString();
+                let style = { fillColor: 'blue', fillOpacity: 0.1, strokeColor: 'black', strokeWeight: 1 };
+
                 if (overlappingZips.has(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+                    style.fillColor = 'purple';
+                    style.fillOpacity = 0.6;
                 } else if (pickupZips.has(zip) && !deliverZips.has(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'green', fillOpacity: 0.4 });
+                    style.fillColor = 'green';
+                    style.fillOpacity = 0.4;
                 } else if (deliverZips.has(zip) && !pickupZips.has(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.4 });
+                    style.fillColor = 'blue';
+                    style.fillOpacity = 0.4;
                 }
+
+                if (selectedZips.has(zip)) {
+                    style.fillColor = 'red';
+                    style.fillOpacity = 0.6;
+                }
+
+                map.data.overrideStyle(feature, style);
             });
 
             updateCarrierInfo();
         }
 
-        function toggleManualSelection(zipCode) {
+        function toggleManualSelection(zipCode, feature) {
             if (selectedZips.has(zipCode)) {
                 selectedZips.delete(zipCode);
+                restoreOriginalStyle(feature, zipCode);
             } else {
                 selectedZips.add(zipCode);
+                map.data.overrideStyle(feature, { fillColor: 'red', fillOpacity: 0.6 });
             }
+
             updateManualInfo();
         }
 
-        function updateManualInfo() {
-            document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${selectedZips.size ? Array.from(selectedZips).join(", ") : "None"}`;
-        }
-
-        function updateCarrierInfo() {
-            document.getElementById("carrierSelectionBox").innerHTML = `
-                <b>Pickup (Green):</b> ${Array.from(pickupZips).join(", ") || "None"}<br>
-                <b>Delivery (Blue):</b> ${Array.from(deliverZips).join(", ") || "None"}<br>
-                <b>Both (Purple):</b> ${Array.from(overlappingZips).join(", ") || "None"}
-            `;
-        }
-
-        function clearCarrierSelection() {
-            currentCarrier = null;
-            map.data.revertStyle();
-            document.getElementById("carrierSelectionBox").innerHTML = "<b>Carrier ZIPs:</b> None";
-        }
-
-        function clearAllSelections() {
-            selectedZips.clear();
-            clearCarrierSelection();
-            document.getElementById("carrierSelect").value = "";
-            map.data.revertStyle();
-            updateManualInfo();
+        function restoreOriginalStyle(feature, zipCode) {
+            if (overlappingZips.has(zipCode)) {
+                map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+            } else if (pickupZips.has(zipCode)) {
+                map.data.overrideStyle(feature, { fillColor: 'green', fillOpacity: 0.4 });
+            } else if (deliverZips.has(zipCode)) {
+                map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.4 });
+            } else {
+                map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.1 });
+            }
         }
     </script>
 
