@@ -512,25 +512,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateInfoBox();
             });
 
-            // Add hover functionality to display tooltips with ZIP information
-            map.data.addListener("mouseover", event => {
-                const zip = event.feature.getProperty("ZIP3");
-                if (zip) {
-                    const tooltip = document.createElement("div");
-                    tooltip.id = "tooltip";
-                    tooltip.style.position = 'absolute';
-                    tooltip.style.backgroundColor = 'white';
-                    tooltip.style.color = 'black';
-                    tooltip.style.border = '1px solid black';
-                    tooltip.style.padding = '5px';
-                    tooltip.style.borderRadius = '5px';
-                    tooltip.style.pointerEvents = 'none';
-                    tooltip.style.top = ${event.domEvent.pageY + 10}px;
-                    tooltip.style.left = ${event.domEvent.pageX + 10}px;
-                    tooltip.textContent = `ZIP: ${zip}`;
-                    document.body.appendChild(tooltip);
-                }
-            });
+           // Add hover functionality to display tooltips with ZIP information
+map.data.addListener("mouseover", event => {
+    const zip = event.feature.getProperty("ZIP3");
+    if (zip) {
+        const tooltip = document.createElement("div");
+        tooltip.id = "tooltip";
+        tooltip.style.position = 'absolute';
+        tooltip.style.backgroundColor = 'white';
+        tooltip.style.color = 'black';
+        tooltip.style.border = '1px solid black';
+        tooltip.style.padding = '5px';
+        tooltip.style.borderRadius = '5px';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.top = `${event.domEvent.pageY + 10}px`;  // Use backticks here
+        tooltip.style.left = `${event.domEvent.pageX + 10}px`;  // And here
+        tooltip.textContent = `ZIP: ${zip}`;
+        document.body.appendChild(tooltip);
+    }
+});
 
             map.data.addListener("mouseout", () => {
                 const tooltip = document.getElementById("tooltip");
