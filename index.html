@@ -99,8 +99,8 @@
 
             // Click event for selecting ZIP codes
             map.data.addListener("click", event => {
-                const zipCode = event.feature.getProperty("ZIP3");
-                toggleZipSelection(zipCode, event.feature);
+                const zipCode = event.feature.getProperty("ZIP3").toString();
+                toggleZipSelection(zipCode);
             });
 
             // Search functionality - Press Enter to highlight ZIPs
@@ -114,12 +114,12 @@
             document.getElementById("clearButton").addEventListener("click", clearSelections);
         }
 
-        function toggleZipSelection(zipCode, feature = null) {
+        function toggleZipSelection(zipCode) {
             if (selectedZips.includes(zipCode)) {
                 selectedZips = selectedZips.filter(zip => zip !== zipCode);
-                map.data.forEach(f => {
-                    if (f.getProperty("ZIP3") === zipCode) {
-                        map.data.overrideStyle(f, {
+                map.data.forEach(feature => {
+                    if (feature.getProperty("ZIP3").toString() === zipCode) {
+                        map.data.overrideStyle(feature, {
                             fillColor: 'blue',
                             fillOpacity: 0.1,
                             strokeColor: 'black',
@@ -129,9 +129,9 @@
                 });
             } else {
                 selectedZips.push(zipCode);
-                map.data.forEach(f => {
-                    if (f.getProperty("ZIP3") === zipCode) {
-                        map.data.overrideStyle(f, {
+                map.data.forEach(feature => {
+                    if (feature.getProperty("ZIP3").toString() === zipCode) {
+                        map.data.overrideStyle(feature, {
                             fillColor: 'red',
                             fillOpacity: 0.4,
                         });
@@ -148,16 +148,20 @@
             let zipArray = input.split(",").map(zip => zip.trim()); // Split input by commas and trim spaces
             let foundZips = [];
 
+            console.log("Searching for ZIP codes:", zipArray);
+
             map.data.forEach(feature => {
-                let zipCode = feature.getProperty("ZIP3");
+                let zipCode = feature.getProperty("ZIP3").toString(); // Ensure it's a string
                 if (zipArray.includes(zipCode)) {
                     foundZips.push(zipCode);
-                    toggleZipSelection(zipCode, feature);
+                    toggleZipSelection(zipCode);
                 }
             });
 
             if (foundZips.length === 0) {
                 alert("No matching ZIP codes found.");
+            } else {
+                console.log("Highlighted ZIP codes:", foundZips);
             }
         }
 
