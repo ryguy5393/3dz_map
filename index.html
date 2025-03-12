@@ -488,10 +488,10 @@
                 if (overlappingZips.has(zip)) {
                     style.fillColor = 'purple';
                     style.fillOpacity = 0.6;
-                } else if (pickupZips.has(zip) && !deliverZips.has(zip)) {
+                } else if (pickupZips.has(zip)) {
                     style.fillColor = 'green';
                     style.fillOpacity = 0.4;
-                } else if (deliverZips.has(zip) && !pickupZips.has(zip)) {
+                } else if (deliverZips.has(zip)) {
                     style.fillColor = 'blue';
                     style.fillOpacity = 0.4;
                 }
@@ -534,6 +534,11 @@
         function updateManualInfo() {
             document.getElementById("manualSelectionBox").innerHTML = 
                 `<b>Selected ZIPs:</b> ${selectedZips.size ? Array.from(selectedZips).join(", ") : "None"}`;
+        }
+
+        function updateCarrierInfo() {
+            document.getElementById("carrierSelectionBox").innerHTML = 
+                `<b>Carrier ZIPs:</b> ${Array.from(pickupZips).concat(Array.from(deliverZips)).join(", ") || "None"}`;
         }
     </script>
 
