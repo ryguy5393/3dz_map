@@ -542,12 +542,25 @@
         }
 
         function clearAllSelections() {
-            selectedZips.clear();
-            map.data.revertStyle();
-            document.getElementById("carrierSelect").value = "";
-            updateManualInfo();
-        }
+    // ✅ Clear manually selected ZIPs
+    selectedZips.clear();
 
+    // ✅ Reset carrier-selected ZIPs
+    pickupZips.clear();
+    deliverZips.clear();
+    overlappingZips.clear();
+    currentCarrier = null;
+
+    // ✅ Reset all ZIP colors on the map
+    map.data.revertStyle();
+
+    // ✅ Reset dropdown to "Select Carrier"
+    document.getElementById("carrierSelect").value = "";
+
+    // ✅ Update the displayed lists for Selected ZIPs and Carrier ZIPs
+    updateManualInfo();
+    updateCarrierInfo();
+}
         function updateCarrierInfo() {
             document.getElementById("carrierSelectionBox").innerHTML = 
                 `<b>Carrier ZIPs:</b> ${Array.from(pickupZips).concat(Array.from(deliverZips)).join(", ") || "None"}`;
