@@ -49,13 +49,10 @@
         button {
             margin-top: 10px;
         }
-        #carrierDataTable {
-            display: none;
-        }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
 </head>
 <body>
+
     <div id="container">
         <div id="map"></div>
     </div>
@@ -71,9 +68,12 @@
     </div>
 
     <script>
-        let map, pickupZips = [], deliverZips = [], overlappingZips = [], selectedZips = [];
+        let map;
+        let selectedZips = [];
 
         function initMap() {
+            console.log("Google Maps API Loaded Successfully!");
+
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
                 center: { lat: 39.8283, lng: -98.5795 },
@@ -81,7 +81,15 @@
                 fullscreenControl: true,
             });
 
-            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
+            // Load ZIP Code Boundaries
+            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson', null, function(features) {
+                if (features.length === 0) {
+                    console.error("🚨 GeoJSON failed to load!");
+                } else {
+                    console.log("✅ GeoJSON Loaded Successfully!");
+                }
+            });
+
             map.data.setStyle({
                 fillColor: 'blue',
                 fillOpacity: 0.1,
@@ -89,8 +97,11 @@
                 strokeWeight: 1,
             });
 
+            // Click event for selecting ZIP codes
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3");
+                console.log("Clicked ZIP Code:", zipCode);
+
                 if (selectedZips.includes(zipCode)) {
                     selectedZips = selectedZips.filter(zip => zip !== zipCode);
                     map.data.overrideStyle(event.feature, {
@@ -109,122 +120,7 @@
                 updateInfoBox();
             });
 
-            map.data.addListener("mouseover", event => {
-                const zip = event.feature.getProperty("ZIP3");
-                if (zip) {
-                    let tooltip = document.createElement("div");
-                    tooltip.id = "tooltip";
-                    tooltip.style.position = 'absolute';
-                    tooltip.style.backgroundColor = 'white';
-                    tooltip.style.color = 'black';
-                    tooltip.style.border = '1px solid black';
-                    tooltip.style.padding = '5px';
-                    tooltip.style.borderRadius = '5px';
-                    tooltip.style.pointerEvents = 'none';
-                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
-                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
-                    tooltip.textContent = `ZIP: ${zip}`;
-                    document.body.appendChild(tooltip);
-                }
-            });
-
-            map.data.addListener("mouseout", () => {
-                const tooltip = document.getElementById("tooltip");
-                if (tooltip) {
-                    document.body.removeChild(tooltip);
-                }
-            });
-
-            map.data.addListener("mousemove", event => {
-                const tooltip = document.getElementById("tooltip");
-                if (tooltip) {
-                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
-                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
-                }
-            });
-
-            document.getElementById("searchBox").addEventListener("change", () => {
-                const zipcode = document.getElementById("searchBox").value.trim();
-                let found = false;
-                map.data.forEach(feature => {
-                    if (feature.getProperty("ZIP3") === zipcode) {
-                        found = true;
-                        map.fitBounds(getFeatureBounds(feature));
-                        map.data.overrideStyle(feature, {
-                            fillColor: 'red',
-                            fillOpacity: 0.4,
-                        });
-                        if (!selectedZips.includes(zipcode)) {
-                            selectedZips.push(zipcode);
-                        }
-                    }
-                });
-
-                if (!found) {
-                    alert("ZIP code not found.");
-                }
-                updateInfoBox();
-            });
-
-            document.getElementById("carrierSelect").addEventListener("change", function() {
-                if (this.value === "veterans") {
-                    loadCarrierData();
-                }
-            });
-
             document.getElementById("clearButton").addEventListener("click", clearSelections);
-        }
-
-        function getFeatureBounds(feature) {
-            const bounds = new google.maps.LatLngBounds();
-            if (feature.getGeometry()) {
-                feature.getGeometry().forEachLatLng(latlng => {
-                    bounds.extend(latlng);
-                });
-            }
-            return bounds;
-        }
-
-        function loadCarrierData() {
-            selectedZips = [];
-            pickupZips = [];
-            deliverZips = [];
-
-            map.data.forEach(feature => {
-                map.data.overrideStyle(feature, {
-                    fillColor: 'blue',
-                    fillOpacity: 0.1,
-                    strokeColor: 'black',
-                    strokeWeight: 1,
-                });
-            });
-
-            const table = document.getElementById("carrierDataTable");
-            for (let row of table.rows) {
-                let pickupZip = row.cells[0]?.innerText;
-                let deliverZip = row.cells[1]?.innerText;
-
-                if (pickupZip) pickupZips.push(pickupZip);
-                if (deliverZip) deliverZips.push(deliverZip);
-            }
-
-            overlappingZips = pickupZips.filter(zip => deliverZips.includes(zip));
-            highlightCarrierZips();
-        }
-
-        function highlightCarrierZips() {
-            map.data.forEach(feature => {
-                const zip = feature.getProperty("ZIP3");
-                if (pickupZips.includes(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'green', fillOpacity: 0.4 });
-                }
-                if (deliverZips.includes(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.4 });
-                }
-                if (overlappingZips.includes(zip)) {
-                    map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
-                }
-            });
         }
 
         function updateInfoBox() {
@@ -241,5 +137,8 @@
             }));
         }
     </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
+
 </body>
 </html>
