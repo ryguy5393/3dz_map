@@ -449,14 +449,14 @@
             });
 
             document.getElementById("carrierSelect").addEventListener("change", function() {
-            if (this.value === "veterans") {
-            currentCarrier = "veterans";
-            loadCarrierData();  // ✅ Ensure the data gets loaded again
-            highlightCarrierZips(); // ✅ Apply the highlighting
-            } else {
-            clearCarrierSelection();
-        }
-    });
+    if (this.value === "veterans") {
+        currentCarrier = "veterans";
+        loadCarrierData();  // ✅ Ensure data is loaded FIRST
+        setTimeout(highlightCarrierZips, 100); // ✅ Add a short delay before applying highlight
+    } else {
+        clearCarrierSelection();
+    }
+});
 
 
             document.getElementById("searchBox").addEventListener("keypress", function(event) {
@@ -544,6 +544,12 @@
             }
         }
 
+function updateManualInfo() {
+    document.getElementById("manualSelectionBox").innerHTML = 
+        `<b>Selected ZIPs:</b> ${selectedZips.size ? Array.from(selectedZips).join(", ") : "None"}`;
+}
+
+        
         function clearAllSelections() {
     // ✅ Clear manually selected ZIPs
     selectedZips.clear();
@@ -564,6 +570,12 @@
     updateManualInfo();
     updateCarrierInfo();
 }
+      
+        function clearCarrierSelection() {
+    map.data.revertStyle();  // ✅ Remove all styles from the map
+    document.getElementById("carrierSelectionBox").innerHTML = "<b>Carrier ZIPs:</b> None";
+}
+        
         function updateCarrierInfo() {
             document.getElementById("carrierSelectionBox").innerHTML = 
                 `<b>Carrier ZIPs:</b> ${Array.from(pickupZips).concat(Array.from(deliverZips)).join(", ") || "None"}`;
