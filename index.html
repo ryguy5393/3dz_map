@@ -527,7 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     tooltip.style.pointerEvents = 'none';
                     tooltip.style.top = ${event.domEvent.pageY + 10}px;
                     tooltip.style.left = ${event.domEvent.pageX + 10}px;
-                    tooltip.textContent = ZIP: ${zip};
+                    tooltip.textContent = `ZIP: ${zip}`;
                     document.body.appendChild(tooltip);
                 }
             });
