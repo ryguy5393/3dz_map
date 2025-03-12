@@ -10,7 +10,7 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            background-color: black; /* Black background */
+            background-color: black;
             color: white;
             display: flex;
             justify-content: center;
@@ -18,8 +18,8 @@
         }
         #container {
             position: relative;
-            width: 90%; /* Map container width */
-            height: 90%; /* Map container height */
+            width: 90%;
+            height: 90%;
         }
         #controls {
             position: absolute;
@@ -32,8 +32,8 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
         #map {
-            width: 100%; /* Map fills the container */
-            height: 100%; /* Map fills the container */
+            width: 100%;
+            height: 100%;
         }
         #infoBox {
             margin-top: 10px;
@@ -49,12 +49,11 @@
         button {
             margin-top: 10px;
         }
-        /* Hide the data table */
         #carrierDataTable {
-            display: none; /* This hides the table */
+            display: none;
         }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </head>
 <body>
     <div id="container">
@@ -62,448 +61,37 @@
     </div>
     
     <div id="controls">
-    <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP code (e.g., 902)">
-    <select id="carrierSelect">
-        <option value="">Select Carrier</option>
-        <option value="veterans">Veteran's</option>
-        <!-- Add more carriers here -->
-    </select>
-    <button id="clearButton">Clear Selections</button>
-    <div id="infoBox">Selected ZIPs will appear here.</div>
-</div>
-    <table id="carrierDataTable">
-  <thead>
-    <tr style="text-align: right;">
-      <th>Pickup</th>
-      <th>Deliver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>452</td>
-      <td>452</td>
-    </tr>
-    <tr>
-      <td>460</td>
-      <td>460</td>
-    </tr>
-    <tr>
-      <td>461</td>
-      <td>461</td>
-    </tr>
-    <tr>
-      <td>462</td>
-      <td>462</td>
-    </tr>
-    <tr>
-      <td>463</td>
-      <td>463</td>
-    </tr>
-    <tr>
-      <td>464</td>
-      <td>464</td>
-    </tr>
-    <tr>
-      <td>465</td>
-      <td>465</td>
-    </tr>
-    <tr>
-      <td>466</td>
-      <td>466</td>
-    </tr>
-    <tr>
-      <td>467</td>
-      <td>467</td>
-    </tr>
-    <tr>
-      <td>468</td>
-      <td>468</td>
-    </tr>
-    <tr>
-      <td>469</td>
-      <td>469</td>
-    </tr>
-    <tr>
-      <td>479</td>
-      <td>479</td>
-    </tr>
-    <tr>
-      <td>480</td>
-      <td>480</td>
-    </tr>
-    <tr>
-      <td>481</td>
-      <td>481</td>
-    </tr>
-    <tr>
-      <td>482</td>
-      <td>482</td>
-    </tr>
-    <tr>
-      <td>483</td>
-      <td>483</td>
-    </tr>
-    <tr>
-      <td>489</td>
-      <td>489</td>
-    </tr>
-    <tr>
-      <td>490</td>
-      <td>490</td>
-    </tr>
-    <tr>
-      <td>491</td>
-      <td>491</td>
-    </tr>
-    <tr>
-      <td>492</td>
-      <td>492</td>
-    </tr>
-    <tr>
-      <td>493</td>
-      <td>493</td>
-    </tr>
-    <tr>
-      <td>494</td>
-      <td>494</td>
-    </tr>
-    <tr>
-      <td>495</td>
-      <td>495</td>
-    </tr>
-    <tr>
-      <td>498</td>
-      <td>498</td>
-    </tr>
-    <tr>
-      <td>506</td>
-      <td>506</td>
-    </tr>
-    <tr>
-      <td>507</td>
-      <td>507</td>
-    </tr>
-    <tr>
-      <td>520</td>
-      <td>520</td>
-    </tr>
-    <tr>
-      <td>521</td>
-      <td>521</td>
-    </tr>
-    <tr>
-      <td>524</td>
-      <td>524</td>
-    </tr>
-    <tr>
-      <td>527</td>
-      <td>527</td>
-    </tr>
-    <tr>
-      <td>528</td>
-      <td>528</td>
-    </tr>
-    <tr>
-      <td>530</td>
-      <td>530</td>
-    </tr>
-    <tr>
-      <td>531</td>
-      <td>531</td>
-    </tr>
-    <tr>
-      <td>532</td>
-      <td>532</td>
-    </tr>
-    <tr>
-      <td>534</td>
-      <td>534</td>
-    </tr>
-    <tr>
-      <td>535</td>
-      <td>535</td>
-    </tr>
-    <tr>
-      <td>537</td>
-      <td>537</td>
-    </tr>
-    <tr>
-      <td>538</td>
-      <td>538</td>
-    </tr>
-    <tr>
-      <td>539</td>
-      <td>539</td>
-    </tr>
-    <tr>
-      <td>540</td>
-      <td>540</td>
-    </tr>
-    <tr>
-      <td>541</td>
-      <td>541</td>
-    </tr>
-    <tr>
-      <td>542</td>
-      <td>542</td>
-    </tr>
-    <tr>
-      <td>543</td>
-      <td>543</td>
-    </tr>
-    <tr>
-      <td>544</td>
-      <td>544</td>
-    </tr>
-    <tr>
-      <td>545</td>
-      <td>545</td>
-    </tr>
-    <tr>
-      <td>546</td>
-      <td>546</td>
-    </tr>
-    <tr>
-      <td>547</td>
-      <td>547</td>
-    </tr>
-    <tr>
-      <td>549</td>
-      <td>549</td>
-    </tr>
-    <tr>
-      <td>550</td>
-      <td>550</td>
-    </tr>
-    <tr>
-      <td>551</td>
-      <td>551</td>
-    </tr>
-    <tr>
-      <td>553</td>
-      <td>553</td>
-    </tr>
-    <tr>
-      <td>554</td>
-      <td>554</td>
-    </tr>
-    <tr>
-      <td>555</td>
-      <td>555</td>
-    </tr>
-    <tr>
-      <td>559</td>
-      <td>559</td>
-    </tr>
-    <tr>
-      <td>560</td>
-      <td>560</td>
-    </tr>
-    <tr>
-      <td>563</td>
-      <td>563</td>
-    </tr>
-    <tr>
-      <td>600</td>
-      <td>600</td>
-    </tr>
-    <tr>
-      <td>601</td>
-      <td>601</td>
-    </tr>
-    <tr>
-      <td>602</td>
-      <td>602</td>
-    </tr>
-    <tr>
-      <td>603</td>
-      <td>603</td>
-    </tr>
-    <tr>
-      <td>604</td>
-      <td>604</td>
-    </tr>
-    <tr>
-      <td>605</td>
-      <td>605</td>
-    </tr>
-    <tr>
-      <td>606</td>
-      <td>606</td>
-    </tr>
-    <tr>
-      <td>607</td>
-      <td>607</td>
-    </tr>
-    <tr>
-      <td>608</td>
-      <td>608</td>
-    </tr>
-    <tr>
-      <td>609</td>
-      <td>609</td>
-    </tr>
-    <tr>
-      <td>610</td>
-      <td>610</td>
-    </tr>
-    <tr>
-      <td>611</td>
-      <td>611</td>
-    </tr>
-    <tr>
-      <td>612</td>
-      <td>612</td>
-    </tr>
-    <tr>
-      <td>613</td>
-      <td>613</td>
-    </tr>
-    <tr>
-      <td>614</td>
-      <td>614</td>
-    </tr>
-    <tr>
-      <td>615</td>
-      <td>615</td>
-    </tr>
-    <tr>
-      <td>616</td>
-      <td>616</td>
-    </tr>
-    <tr>
-      <td>617</td>
-      <td>617</td>
-    </tr>
-    <tr>
-      <td>618</td>
-      <td>618</td>
-    </tr>
-    <tr>
-      <td>619</td>
-      <td>619</td>
-    </tr>
-    <tr>
-      <td>620</td>
-      <td>620</td>
-    </tr>
-    <tr>
-      <td>622</td>
-      <td>622</td>
-    </tr>
-    <tr>
-      <td>625</td>
-      <td>625</td>
-    </tr>
-    <tr>
-      <td>626</td>
-      <td>626</td>
-    </tr>
-    <tr>
-      <td>627</td>
-      <td>627</td>
-    </tr>
-    <tr>
-      <td>630</td>
-      <td>630</td>
-    </tr>
-    <tr>
-      <td>631</td>
-      <td>631</td>
-    </tr>
-    <tr>
-      <td>633</td>
-      <td>633</td>
-    </tr>
-  </tbody>
-</table>
+        <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP code (e.g., 902)">
+        <select id="carrierSelect">
+            <option value="">Select Carrier</option>
+            <option value="veterans">Veteran's</option>
+        </select>
+        <button id="clearButton">Clear Selections</button>
+        <div id="infoBox">Selected ZIPs will appear here.</div>
+    </div>
 
-    
- <script>
-    // Define the initMap function before loading Google Maps API
-    function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 4,
-            center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
-            mapTypeControl: true,
-            mapTypeControlOptions: {
-                style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                position: google.maps.ControlPosition.BOTTOM_LEFT,
-            },
-            fullscreenControl: true,
-            fullscreenControlOptions: {
-                position: google.maps.ControlPosition.BOTTOM_LEFT,
-            },
-        });
+    <script>
+        let map, pickupZips = [], deliverZips = [], overlappingZips = [], selectedZips = [];
 
-        // Load the GeoJSON data for ZIP codes
-        map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 4,
+                center: { lat: 39.8283, lng: -98.5795 },
+                mapTypeControl: true,
+                fullscreenControl: true,
+            });
 
-        // Set a default style for all ZIP code polygons
-        map.data.setStyle({
-            fillColor: 'blue', // Default fill color for ZIP codes
-            fillOpacity: 0.1, // Slight transparency
-            strokeColor: 'black', // Border color
-            strokeWeight: 1, // Border width
-        });
-    }
+            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
+            map.data.setStyle({
+                fillColor: 'blue',
+                fillOpacity: 0.1,
+                strokeColor: 'black',
+                strokeWeight: 1,
+            });
 
-    // Define other functions here
-    let map;
-    let pickupZips = [];
-    let deliverZips = [];
-    let overlappingZips = [];
-    let selectedZips = [];
-
-    // Function to extract ZIP codes from the hidden table
-    function extractCarrierData() {
-        pickupZips = [];
-        deliverZips = [];
-        overlappingZips = [];
-
-        // Get the table and its rows
-        const table = document.getElementById("carrierDataTable");
-        const rows = table.querySelectorAll("tbody tr");
-
-        rows.forEach(row => {
-            const columns = row.querySelectorAll("td");
-
-            // Assuming Pickup is in the first column and Delivery is in the second
-            if (columns.length === 2) {
-                const pickupZip = columns[0].textContent.trim();
-                const deliverZip = columns[1].textContent.trim();
-
-                // Add to the pickup and delivery arrays
-                pickupZips.push(pickupZip);
-                deliverZips.push(deliverZip);
-
-                // Check if both pickup and delivery ZIPs are the same (overlap)
-                if (pickupZip === deliverZip) {
-                    overlappingZips.push(pickupZip);
-                }
-            }
-        });
-
-        console.log("Pickup ZIPs:", pickupZips);
-        console.log("Deliver ZIPs:", deliverZips);
-        console.log("Overlapping ZIPs:", overlappingZips);
-    }
-
-    // Call this function after the DOM is fully loaded
-    document.addEventListener("DOMContentLoaded", () => {
-        extractCarrierData();
-    });
-</script>
-
-<!-- Load the Google Maps API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
-
-
-            // Add click functionality to select/deselect ZIPs
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3");
                 if (selectedZips.includes(zipCode)) {
-                    // Deselect the ZIP code
                     selectedZips = selectedZips.filter(zip => zip !== zipCode);
                     map.data.overrideStyle(event.feature, {
                         fillColor: 'blue',
@@ -512,7 +100,6 @@
                         strokeWeight: 1,
                     });
                 } else {
-                    // Select the ZIP code
                     selectedZips.push(zipCode);
                     map.data.overrideStyle(event.feature, {
                         fillColor: 'red',
@@ -522,25 +109,24 @@
                 updateInfoBox();
             });
 
-           // Add hover functionality to display tooltips with ZIP information
-map.data.addListener("mouseover", event => {
-    const zip = event.feature.getProperty("ZIP3");
-    if (zip) {
-        const tooltip = document.createElement("div");
-        tooltip.id = "tooltip";
-        tooltip.style.position = 'absolute';
-        tooltip.style.backgroundColor = 'white';
-        tooltip.style.color = 'black';
-        tooltip.style.border = '1px solid black';
-        tooltip.style.padding = '5px';
-        tooltip.style.borderRadius = '5px';
-        tooltip.style.pointerEvents = 'none';
-        tooltip.style.top = `${event.domEvent.pageY + 10}px`;  // Use backticks here
-        tooltip.style.left = `${event.domEvent.pageX + 10}px`;  // And here
-        tooltip.textContent = `ZIP: ${zip}`;
-        document.body.appendChild(tooltip);
-    }
-});
+            map.data.addListener("mouseover", event => {
+                const zip = event.feature.getProperty("ZIP3");
+                if (zip) {
+                    let tooltip = document.createElement("div");
+                    tooltip.id = "tooltip";
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.backgroundColor = 'white';
+                    tooltip.style.color = 'black';
+                    tooltip.style.border = '1px solid black';
+                    tooltip.style.padding = '5px';
+                    tooltip.style.borderRadius = '5px';
+                    tooltip.style.pointerEvents = 'none';
+                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
+                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
+                    tooltip.textContent = `ZIP: ${zip}`;
+                    document.body.appendChild(tooltip);
+                }
+            });
 
             map.data.addListener("mouseout", () => {
                 const tooltip = document.getElementById("tooltip");
@@ -552,15 +138,13 @@ map.data.addListener("mouseover", event => {
             map.data.addListener("mousemove", event => {
                 const tooltip = document.getElementById("tooltip");
                 if (tooltip) {
-                    tooltip.style.top = ${event.domEvent.pageY + 10}px;
-                    tooltip.style.left = ${event.domEvent.pageX + 10}px;
+                    tooltip.style.top = `${event.domEvent.pageY + 10}px`;
+                    tooltip.style.left = `${event.domEvent.pageX + 10}px`;
                 }
             });
 
-            // Search functionality
-            const searchBox = document.getElementById("searchBox");
-            searchBox.addEventListener("change", () => {
-                const zipcode = searchBox.value.trim();
+            document.getElementById("searchBox").addEventListener("change", () => {
+                const zipcode = document.getElementById("searchBox").value.trim();
                 let found = false;
                 map.data.forEach(feature => {
                     if (feature.getProperty("ZIP3") === zipcode) {
@@ -579,14 +163,11 @@ map.data.addListener("mouseover", event => {
                 if (!found) {
                     alert("ZIP code not found.");
                 }
-
                 updateInfoBox();
             });
-          
-            // Carrier data select functionality
+
             document.getElementById("carrierSelect").addEventListener("change", function() {
-                const selectedCarrier = this.value;
-                if (selectedCarrier === "Veteran's") {
+                if (this.value === "veterans") {
                     loadCarrierData();
                 }
             });
@@ -594,19 +175,21 @@ map.data.addListener("mouseover", event => {
             document.getElementById("clearButton").addEventListener("click", clearSelections);
         }
 
-        // Helper function to get bounds of a GeoJSON feature
         function getFeatureBounds(feature) {
             const bounds = new google.maps.LatLngBounds();
-            feature.getGeometry().forEachLatLng(latlng => {
-                bounds.extend(latlng);
-            });
+            if (feature.getGeometry()) {
+                feature.getGeometry().forEachLatLng(latlng => {
+                    bounds.extend(latlng);
+                });
+            }
             return bounds;
         }
 
-  // Function to load carrier data
         function loadCarrierData() {
-            // Clear previous ZIP selections
             selectedZips = [];
+            pickupZips = [];
+            deliverZips = [];
+
             map.data.forEach(feature => {
                 map.data.overrideStyle(feature, {
                     fillColor: 'blue',
@@ -616,78 +199,47 @@ map.data.addListener("mouseover", event => {
                 });
             });
 
-  // Load ZIP codes from the hidden table
-            const table = document.getElementById('carrierDataTable');
+            const table = document.getElementById("carrierDataTable");
             for (let row of table.rows) {
-                const pickupZip = row.cells[0]?.innerText;
-                const deliverZip = row.cells[1]?.innerText;
+                let pickupZip = row.cells[0]?.innerText;
+                let deliverZip = row.cells[1]?.innerText;
 
-                if (pickupZip) {
-                    pickupZips.push(pickupZip);
-                }
-                if (deliverZip) {
-                    deliverZips.push(deliverZip);
-                }
+                if (pickupZip) pickupZips.push(pickupZip);
+                if (deliverZip) deliverZips.push(deliverZip);
             }
 
-            // Find overlapping ZIP codes
             overlappingZips = pickupZips.filter(zip => deliverZips.includes(zip));
-
-            // Highlight ZIP codes on the map
             highlightCarrierZips();
         }
 
- // Function to highlight carrier ZIPs
         function highlightCarrierZips() {
             map.data.forEach(feature => {
                 const zip = feature.getProperty("ZIP3");
                 if (pickupZips.includes(zip)) {
-                    map.data.overrideStyle(feature, {
-                        fillColor: 'green',
-                        fillOpacity: 0.4,
-                    });
+                    map.data.overrideStyle(feature, { fillColor: 'green', fillOpacity: 0.4 });
                 }
                 if (deliverZips.includes(zip)) {
-                    map.data.overrideStyle(feature, {
-                        fillColor: 'blue',
-                        fillOpacity: 0.4,
-                    });
+                    map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.4 });
                 }
                 if (overlappingZips.includes(zip)) {
-                    map.data.overrideStyle(feature, {
-                        fillColor: 'purple',
-                        fillOpacity: 0.6,
-                    });
+                    map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
                 }
             });
         }
-        
-        // Update the info box with the list of selected ZIP codes
+
         function updateInfoBox() {
-            const infoBox = document.getElementById("infoBox");
-            if (selectedZips.length === 0) {
-                infoBox.innerText = "No ZIP codes selected.";
-            } else {
-                infoBox.innerText = "Selected ZIPs: " + selectedZips.join(", ");
-            }
+            document.getElementById("infoBox").innerText = selectedZips.length
+                ? "Selected ZIPs: " + selectedZips.join(", ")
+                : "No ZIP codes selected.";
         }
 
-        // Clear all selections
         function clearSelections() {
-            map.data.forEach(feature => {
-                map.data.overrideStyle(feature, {
-                    fillColor: 'blue',
-                    fillOpacity: 0.1,
-                    strokeColor: 'black',
-                    strokeWeight: 1,
-                });
-            });
             selectedZips = [];
             updateInfoBox();
+            map.data.forEach(feature => map.data.overrideStyle(feature, {
+                fillColor: 'blue', fillOpacity: 0.1, strokeColor: 'black', strokeWeight: 1
+            }));
         }
-
-        // Initialize the map when the page loads
-        window.onload = initMap;
     </script>
 </body>
 </html>
