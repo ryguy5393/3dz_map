@@ -449,13 +449,15 @@
             });
 
             document.getElementById("carrierSelect").addEventListener("change", function() {
-                if (this.value === "veterans") {
-                    currentCarrier = "veterans";
-                    highlightCarrierZips();
-                } else {
-                    clearCarrierSelection();
-                }
-            });
+            if (this.value === "veterans") {
+            currentCarrier = "veterans";
+            loadCarrierData();  // ✅ Ensure the data gets loaded again
+            highlightCarrierZips(); // ✅ Apply the highlighting
+            } else {
+            clearCarrierSelection();
+        }
+    });
+
 
             document.getElementById("searchBox").addEventListener("keypress", function(event) {
                 if (event.key === "Enter") {
@@ -514,15 +516,16 @@
 
         function toggleManualSelection(zipCode, feature) {
             if (selectedZips.has(zipCode)) {
-                selectedZips.delete(zipCode);
-                map.data.revertStyle();
+            selectedZips.delete(zipCode);
+            map.data.revertStyle();  // ✅ Reset color when deselected
             } else {
-                selectedZips.add(zipCode);
-                map.data.overrideStyle(feature, { fillColor: 'red', fillOpacity: 0.6 });
+            selectedZips.add(zipCode);
+            map.data.overrideStyle(feature, { fillColor: 'red', fillOpacity: 0.6 });
             }
 
-            updateManualInfo();
-        }
+        updateManualInfo();  // ✅ Force update to the "Selected ZIPs" field
+    }
+
 
         function searchAndHighlightZIP(zipCode) {
             let found = false;
