@@ -79,7 +79,7 @@
             <tr><th>Pickup</th><th>Deliver</th></tr>
         </thead>
         <tbody>
-           <tr>
+            <tr>
       <td>452</td>
       <td>452</td>
     </tr>
@@ -523,16 +523,16 @@
             updateManualInfo();
         }
 
-        function restoreOriginalStyle(feature, zipCode) {
-            if (overlappingZips.has(zipCode)) {
-                map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
-            } else if (pickupZips.has(zipCode)) {
-                map.data.overrideStyle(feature, { fillColor: 'green', fillOpacity: 0.4 });
-            } else if (deliverZips.has(zipCode)) {
-                map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.4 });
-            } else {
-                map.data.overrideStyle(feature, { fillColor: 'blue', fillOpacity: 0.1 });
-            }
+        function clearAllSelections() {
+            selectedZips.clear();
+            clearCarrierSelection();
+
+            map.data.forEach(feature => {
+                restoreOriginalStyle(feature, feature.getProperty("ZIP3"));
+            });
+
+            document.getElementById("carrierSelect").value = "";
+            updateManualInfo();
         }
     </script>
 
