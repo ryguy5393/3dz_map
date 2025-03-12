@@ -577,9 +577,25 @@ function updateManualInfo() {
 }
         
         function updateCarrierInfo() {
-            document.getElementById("carrierSelectionBox").innerHTML = 
-                `<b>Carrier ZIPs:</b> ${Array.from(pickupZips).concat(Array.from(deliverZips)).join(", ") || "None"}`;
+    let carrierZipList = [];
+
+    pickupZips.forEach(zip => {
+        if (deliverZips.has(zip)) {
+            carrierZipList.push(`${zip} (Both)`);
+        } else {
+            carrierZipList.push(`${zip} (Pickup)`);
         }
+    });
+
+    deliverZips.forEach(zip => {
+        if (!pickupZips.has(zip)) {
+            carrierZipList.push(`${zip} (Deliver)`);
+        }
+    });
+
+    document.getElementById("carrierSelectionBox").innerHTML = 
+        `<b>Carrier ZIPs:</b> ${carrierZipList.length ? carrierZipList.join(", ") : "None"}`;
+}
     </script>
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
