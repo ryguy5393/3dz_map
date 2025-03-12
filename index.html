@@ -424,11 +424,9 @@
         let pickupZips = new Set();
         let deliverZips = new Set();
         let overlappingZips = new Set();
-        let currentCarrier = null; // Tracks the selected carrier
+        let currentCarrier = null;
 
         function initMap() {
-            console.log("Google Maps API Loaded Successfully!");
-
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
                 center: { lat: 39.8283, lng: -98.5795 },
@@ -445,7 +443,6 @@
                 strokeWeight: 1,
             });
 
-            // Enable clicking to highlight ZIPs in red
             map.data.addListener("click", event => {
                 const zipCode = event.feature.getProperty("ZIP3").toString();
                 toggleManualSelection(zipCode, event.feature);
@@ -470,8 +467,7 @@
             deliverZips.clear();
             overlappingZips.clear();
 
-            const rows = document.querySelectorAll("#carrierDataTable tbody tr");
-            rows.forEach(row => {
+            document.querySelectorAll("#carrierDataTable tbody tr").forEach(row => {
                 const pickupZip = row.cells[0].textContent.trim();
                 const deliverZip = row.cells[1].textContent.trim();
 
@@ -487,7 +483,7 @@
         function highlightCarrierZips() {
             map.data.forEach(feature => {
                 const zip = feature.getProperty("ZIP3").toString();
-                let style = { fillColor: 'blue', fillOpacity: 0.1, strokeColor: 'black', strokeWeight: 1 };
+                let style = { fillColor: 'blue', fillOpacity: 0.1 };
 
                 if (overlappingZips.has(zip)) {
                     style.fillColor = 'purple';
@@ -533,6 +529,11 @@
 
             document.getElementById("carrierSelect").value = "";
             updateManualInfo();
+        }
+
+        function updateManualInfo() {
+            document.getElementById("manualSelectionBox").innerHTML = 
+                `<b>Selected ZIPs:</b> ${selectedZips.size ? Array.from(selectedZips).join(", ") : "None"}`;
         }
     </script>
 
