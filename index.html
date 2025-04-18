@@ -172,6 +172,12 @@
 
   updateCarrierDropdown();
 
+document.getElementById("clearButton").addEventListener("click", () => {
+    selectedZips.clear();
+    map.data.revertStyle();
+    updateManualInfo();
+  });
+  
 function initMap() {
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 4,
@@ -200,7 +206,7 @@ function initMap() {
     } else {
       if (selectedZips.has(zipCode)) {
         selectedZips.delete(zipCode);
-        map.data.overrideStyle(event.feature, null);
+         map.data.revertStyle(event.feature);
       } else {
         selectedZips.set(zipCode, "manual");
         map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
