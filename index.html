@@ -47,7 +47,11 @@
       background: #f9f9f9;
       color: black;
     }
-    button, select {
+    button {
+      margin-top: 10px;
+      width: 100%;
+    }
+    select {
       margin-top: 10px;
       width: 100%;
     }
@@ -81,9 +85,10 @@
 
 <div id="controls">
   <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP(s), e.g., 902, 303, 606">
-  <select id="carrierSelect" multiple size="6">
-    <option value="veterans">Veteran's</option>
-  </select>
+  <div style="position: relative">
+    <button id="carrierDropdownToggle">Select Carriers</button>
+    <div id="carrierDropdown" style="display:none; border: 1px solid #ccc; background: white; color: black; max-height: 150px; overflow-y: auto; position: absolute; width: 100%; z-index: 10;"></div>
+  </div>
   <button id="clearButton">Clear All Selections</button>
   <button id="beginProfileButton">Create Carrier Profile</button>
   <select id="roleSelector">
@@ -109,146 +114,147 @@
 <script>
   let map;
   let selectedZips = new Map();
-  let pickupZips = new Set();
-  let deliverZips = new Set();
-  let overlappingZips = new Set();
   let profileMode = false;
+  const carrierList = { "veterans": "Veteran's" };
 
-  function initMap() {
-    map = new google.maps.Map(document.getElementById("map"), {
-      zoom: 4,
-      center: { lat: 39.8283, lng: -98.5795 },
-    });
+  function updateCarrierDropdown() {
+    const dropdown = document.getElementById("carrierDropdown");
+    dropdown.innerHTML = "";
+    for (const key in carrierList) {
+      const label = document.createElement("label");
+      label.style.display = "block";
+      label.innerHTML = `<input type="checkbox" value="${key}" onchange="loadCarriers()"> ${carrierList[key]}`;
+      dropdown.appendChild(label);
+    }
+  }
 
-    map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
-
-    map.data.setStyle({
-      fillColor: 'blue',
-      fillOpacity: 0.1,
-      strokeColor: 'black',
-      strokeWeight: 1,
-    });
-
-    map.data.addListener("click", event => {
-      const zipCode = event.feature.getProperty("ZIP3").toString();
-
-      if (profileMode) {
-        const role = document.getElementById("roleSelector").value;
-        selectedZips.set(zipCode, role);
-        map.data.overrideStyle(event.feature, {
-          fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
-          fillOpacity: 0.6
+  function loadCarriers() {
+    const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
+    const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    map.data.revertStyle();
+    activeCarriers.forEach(value => {
+      if (value === "veterans") {
+        const veteranZips = ["452","460","461","462","463","464","465","466","467","468","469","479","480","481","482","483","489","490","491","492","493","494","495","498","506","507","520","521","524","527","528","530","531","532","534","535","537","538","539","540","541","542","543","544","545","546","547","549","550","551","553","554","555","559","560","563","600","601","602","603","604","605","606","607","608","609","610","611","612","613","614","615","616","617","618","619","620","622","625","626","627","630","631","633"];
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          if (veteranZips.includes(zip)) {
+            map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
+          }
         });
       } else {
-        if (selectedZips.has(zipCode)) {
-          selectedZips.delete(zipCode);
-          map.data.overrideStyle(event.feature, null);
-        } else {
-          selectedZips.set(zipCode, "manual");
-          map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
-        }
+        const stored = localStorage.getItem(`zipProfile_${value}`);
+        if (!stored) return;
+        const profileData = JSON.parse(stored);
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          const role = profileData[zip];
+          if (role) {
+            const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
+            map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
+          }
+        });
       }
-
-      updateManualInfo();
-    });
-
-    document.getElementById("searchBox").addEventListener("keypress", function(event) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const zipInput = this.value.trim();
-        if (zipInput) {
-          const zips = zipInput.split(',').map(z => z.trim());
-          map.data.forEach(feature => {
-            const zip = feature.getProperty("ZIP3").toString();
-            if (zips.includes(zip)) {
-              const role = profileMode ? document.getElementById("roleSelector").value : "manual";
-              selectedZips.set(zip, role);
-              map.data.overrideStyle(feature, {
-                fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'red',
-                fillOpacity: 0.6
-              });
-            }
-          });
-          updateManualInfo();
-        }
-      }
-    });
-
-    document.getElementById("beginProfileButton").addEventListener("click", () => {
-      profileMode = true;
-      document.getElementById("roleSelector").style.display = "block";
-      document.getElementById("finalizeProfileButton").style.display = "block";
-      document.getElementById("profileName").style.display = "block";
-    });
-
-    document.getElementById("finalizeProfileButton").addEventListener("click", () => {
-      const profileName = document.getElementById("profileName").value.trim();
-      if (!profileName) return alert("Enter a name for this profile.");
-      if (selectedZips.size === 0) return alert("No ZIPs selected.");
-
-      const profileData = {};
-      selectedZips.forEach((role, zip) => profileData[zip] = role);
-      localStorage.setItem(`zipProfile_${profileName}`, JSON.stringify(profileData));
-
-      const carrierSelect = document.getElementById("carrierSelect");
-      const option = document.createElement("option");
-      option.value = profileName;
-      option.textContent = profileName;
-      carrierSelect.appendChild(option);
-
-      document.getElementById("profileName").value = "";
-      document.getElementById("roleSelector").style.display = "none";
-      document.getElementById("finalizeProfileButton").style.display = "none";
-      document.getElementById("profileName").style.display = "none";
-      profileMode = false;
-    });
-
-    document.getElementById("clearButton").addEventListener("click", () => {
-      selectedZips.clear();
-      map.data.revertStyle();
-      updateManualInfo();
-    });
-
-    document.getElementById("carrierSelect").addEventListener("change", function () {
-      const selected = Array.from(this.selectedOptions).map(opt => opt.value);
-      map.data.revertStyle();
-
-      selected.forEach(value => {
-        if (value === "veterans") {
-          loadVeteranZips();
-        } else {
-          const stored = localStorage.getItem(`zipProfile_${value}`);
-          if (!stored) return;
-          const profileData = JSON.parse(stored);
-          map.data.forEach(feature => {
-            const zip = feature.getProperty("ZIP3").toString();
-            const role = profileData[zip];
-            if (role) {
-              map.data.overrideStyle(feature, {
-                fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
-                fillOpacity: 0.6
-              });
-            }
-          });
-        }
-      });
     });
   }
+
+  document.getElementById("carrierDropdownToggle").addEventListener("click", () => {
+    const dropdown = document.getElementById("carrierDropdown");
+    dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+  });
+
+  document.getElementById("beginProfileButton").addEventListener("click", () => {
+    profileMode = true;
+    document.getElementById("roleSelector").style.display = "block";
+    document.getElementById("finalizeProfileButton").style.display = "block";
+    document.getElementById("profileName").style.display = "block";
+  });
+
+  updateCarrierDropdown();
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 4,
+    center: { lat: 39.8283, lng: -98.5795 },
+  });
+
+  map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
+
+  map.data.setStyle({
+    fillColor: 'blue',
+    fillOpacity: 0.1,
+    strokeColor: 'black',
+    strokeWeight: 1,
+  });
+
+  map.data.addListener("click", event => {
+    const zipCode = event.feature.getProperty("ZIP3").toString();
+
+    if (profileMode) {
+      const role = document.getElementById("roleSelector").value;
+      selectedZips.set(zipCode, role);
+      map.data.overrideStyle(event.feature, {
+        fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
+        fillOpacity: 0.6
+      });
+    } else {
+      if (selectedZips.has(zipCode)) {
+        selectedZips.delete(zipCode);
+        map.data.overrideStyle(event.feature, null);
+      } else {
+        selectedZips.set(zipCode, "manual");
+        map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
+      }
+    }
+
+    updateManualInfo();
+  });
+
+  document.getElementById("searchBox").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const zipInput = this.value.trim();
+      if (zipInput) {
+        const zips = zipInput.split(',').map(z => z.trim());
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3").toString();
+          if (zips.includes(zip)) {
+            const role = profileMode ? document.getElementById("roleSelector").value : "manual";
+            selectedZips.set(zip, role);
+            map.data.overrideStyle(feature, {
+              fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'red',
+              fillOpacity: 0.6
+            });
+          }
+        });
+        updateManualInfo();
+      }
+    }
+  });
+
+  document.getElementById("finalizeProfileButton").addEventListener("click", () => {
+    const profileName = document.getElementById("profileName").value.trim();
+    if (!profileName) return alert("Enter a name for this profile.");
+    if (selectedZips.size === 0) return alert("No ZIPs selected.");
+
+    const profileData = {};
+    selectedZips.forEach((role, zip) => profileData[zip] = role);
+    localStorage.setItem(`zipProfile_${profileName}`, JSON.stringify(profileData));
+
+    carrierList[profileName] = profileName;
+    updateCarrierDropdown();
+
+    document.getElementById("profileName").value = "";
+    document.getElementById("roleSelector").style.display = "none";
+    document.getElementById("finalizeProfileButton").style.display = "none";
+    document.getElementById("profileName").style.display = "none";
+    profileMode = false;
+  });
 
   function updateManualInfo() {
     const display = Array.from(selectedZips.entries()).map(([zip, role]) => `${zip} (${role})`);
     document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${display.length ? display.join(", ") : "None"}`;
   }
-
-  function loadVeteranZips() {
-    const veteranZips = ["452","460","461","462","463","464","465","466","467","468","469","479","480","481","482","483","489","490","491","492","493","494","495","498","506","507","520","521","524","527","528","530","531","532","534","535","537","538","539","540","541","542","543","544","545","546","547","549","550","551","553","554","555","559","560","563","600","601","602","603","604","605","606","607","608","609","610","611","612","613","614","615","616","617","618","619","620","622","625","626","627","630","631","633"];
-    map.data.forEach(feature => {
-      const zip = feature.getProperty("ZIP3").toString();
-      if (veteranZips.includes(zip)) {
-        map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
-      }
-    });
-  }
+}
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
 </body>
