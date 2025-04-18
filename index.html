@@ -173,10 +173,10 @@
   updateCarrierDropdown();
 
 document.getElementById("clearButton").addEventListener("click", () => {
-    selectedZips.clear();
-    map.data.revertStyle();
-    updateManualInfo();
-  });
+  selectedZips.clear();
+  map.data.forEach(f => map.data.revertStyle(f));  // Revert every individual feature style
+  updateManualInfo();
+});
   
 function initMap() {
   map = new google.maps.Map(document.getElementById("map"), {
