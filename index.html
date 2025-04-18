@@ -47,9 +47,19 @@
             background: #f9f9f9;
             color: black;
         }
-        button {
+        button, select {
             margin-top: 10px;
             width: 100%;
+        }
+        .legend {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .legend span {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
         }
         #carrierDataTable {
             display: none;
@@ -58,221 +68,247 @@
 </head>
 <body>
 
-    <div id="container">
-        <div id="map"></div>
+<div id="container">
+    <div id="map"></div>
+</div>
+
+<div id="controls">
+    <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP(s), e.g., 902, 303, 606">
+    <select id="carrierSelect">
+        <option value="">Select Carrier</option>
+        <option value="veterans">Veteran's</option>
+    </select>
+    <button id="clearButton">Clear All Selections</button>
+    <button id="beginProfileButton">Create Carrier Profile</button>
+    <select id="roleSelector">
+        <option value="pickup">Pickup</option>
+        <option value="deliver">Deliver</option>
+        <option value="both">Both</option>
+    </select>
+    <button id="finalizeProfileButton" style="display:none;">Finalize & Save Profile</button>
+    <input id="profileName" type="text" placeholder="Enter profile name" style="display:none;">
+    <select id="customProfileSelect">
+        <option value="">Load Saved Profile</option>
+    </select>
+
+    <div class="legend">
+        <b>Legend:</b><br>
+        <span style="background-color: green;"></span> Pickup<br>
+        <span style="background-color: blue;"></span> Deliver<br>
+        <span style="background-color: purple;"></span> Both<br>
+        <span style="background-color: red;"></span> Manual<br>
     </div>
 
-    <div id="controls">
-        <input id="searchBox" type="text" placeholder="Enter 3-digit ZIP(s), e.g., 902, 303, 606">
-        <select id="carrierSelect">
-            <option value="">Select Carrier</option>
-            <option value="veterans">Veteran's</option>
-        </select>
-        <button id="clearButton">Clear All Selections</button>
+    <div id="manualSelectionBox" class="infoBox"><b>Selected ZIPs:</b> None</div>
+    <div id="carrierSelectionBox" class="infoBox"><b>Carrier ZIPs:</b> None</div>
+</div>
 
-        <input id="profileName" type="text" placeholder="New profile name">
-        <button id="saveProfileButton">Save ZIPs as Profile</button>
-        <select id="customProfileSelect">
-            <option value="">Load Saved Profile</option>
-        </select>
+<script>
+    let map;
+    let selectedZips = new Map();
+    let pickupZips = new Set();
+    let deliverZips = new Set();
+    let overlappingZips = new Set();
+    let currentCarrier = null;
+    let profileMode = false;
 
-        <div id="manualSelectionBox" class="infoBox"><b>Selected ZIPs:</b> None</div>
-        <div id="carrierSelectionBox" class="infoBox"><b>Carrier ZIPs:</b> None</div>
-    </div>
+    function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 4,
+            center: { lat: 39.8283, lng: -98.5795 },
+            mapTypeControl: true,
+            fullscreenControl: true,
+        });
 
-    <script>
-        let map;
-        let selectedZips = new Map(); // key = zip, value = 'pickup' | 'deliver' | 'both'
-        let pickupZips = new Set();
-        let deliverZips = new Set();
-        let overlappingZips = new Set();
-        let currentCarrier = null;
+        map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 4,
-                center: { lat: 39.8283, lng: -98.5795 },
-                mapTypeControl: true,
-                fullscreenControl: true,
-            });
+        map.data.setStyle({
+            fillColor: 'blue',
+            fillOpacity: 0.1,
+            strokeColor: 'black',
+            strokeWeight: 1,
+        });
 
-            map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
+        map.data.addListener("click", event => {
+            const zipCode = event.feature.getProperty("ZIP3").toString();
+            if (profileMode) {
+                const role = document.getElementById("roleSelector").value;
+                selectedZips.set(zipCode, role);
+                map.data.overrideStyle(event.feature, {
+                    fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
+                    fillOpacity: 0.6
+                });
+                updateManualInfo();
+            } else {
+                selectedZips.set(zipCode, "manual");
+                map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
+                updateManualInfo();
+            }
+        });
 
-            map.data.setStyle({
-                fillColor: 'blue',
-                fillOpacity: 0.1,
-                strokeColor: 'black',
-                strokeWeight: 1,
-            });
+        document.getElementById("searchBox").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const zipInput = this.value.trim();
+                if (zipInput) {
+                    const zips = zipInput.split(',').map(z => z.trim());
+                    map.data.forEach(feature => {
+                        const zip = feature.getProperty("ZIP3").toString();
+                        if (zips.includes(zip)) {
+                            const role = profileMode ? document.getElementById("roleSelector").value : "manual";
+                            selectedZips.set(zip, role);
+                            map.data.overrideStyle(feature, {
+                                fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'red',
+                                fillOpacity: 0.6
+                            });
+                        }
+                    });
+                    updateManualInfo();
+                }
+            }
+        });
 
-            map.data.addListener("click", event => {
-                const zipCode = event.feature.getProperty("ZIP3").toString();
-                const role = prompt("Assign role for ZIP " + zipCode + ": enter 'pickup', 'deliver', or 'both'");
-                if (["pickup", "deliver", "both"].includes(role)) {
-                    selectedZips.set(zipCode, role);
-                    map.data.overrideStyle(event.feature, {
-                        fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
+        document.getElementById("beginProfileButton").addEventListener("click", () => {
+            profileMode = true;
+            document.getElementById("finalizeProfileButton").style.display = "block";
+            document.getElementById("profileName").style.display = "block";
+        });
+
+        document.getElementById("finalizeProfileButton").addEventListener("click", () => {
+            const profileName = document.getElementById("profileName").value.trim();
+            if (!profileName) return alert("Enter a name for this profile.");
+            if (selectedZips.size === 0) return alert("No ZIPs selected.");
+            const profileData = {};
+            selectedZips.forEach((role, zip) => profileData[zip] = role);
+            localStorage.setItem(`zipProfile_${profileName}`, JSON.stringify(profileData));
+            alert(`Saved profile "${profileName}"`);
+            updateCustomProfileDropdown();
+            document.getElementById("profileName").value = "";
+            document.getElementById("finalizeProfileButton").style.display = "none";
+            document.getElementById("profileName").style.display = "none";
+            profileMode = false;
+        });
+
+        document.getElementById("clearButton").addEventListener("click", clearAllSelections);
+
+        document.getElementById("customProfileSelect").addEventListener("change", function () {
+            const selectedProfile = this.value;
+            if (!selectedProfile) return;
+            const stored = localStorage.getItem(`zipProfile_${selectedProfile}`);
+            if (!stored) return alert("Profile not found.");
+            const profileData = JSON.parse(stored);
+            selectedZips.clear();
+            map.data.revertStyle();
+            map.data.forEach(feature => {
+                const zip = feature.getProperty("ZIP3").toString();
+                const role = profileData[zip];
+                if (role) {
+                    selectedZips.set(zip, role);
+                    map.data.overrideStyle(feature, {
+                        fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'orange',
                         fillOpacity: 0.6
                     });
                 }
-                updateManualInfo();
             });
-
-            document.getElementById("carrierSelect").addEventListener("change", function() {
-                if (this.value === "veterans") {
-                    currentCarrier = "veterans";
-                    loadCarrierData();
-                    setTimeout(highlightCarrierZips, 100);
-                } else {
-                    clearCarrierSelection();
-                }
-            });
-
-            document.getElementById("searchBox").addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    const zipInput = this.value.trim();
-                    if (zipInput) {
-                        const zips = zipInput.split(',').map(z => z.trim());
-                        map.data.forEach(feature => {
-                            const zip = feature.getProperty("ZIP3").toString();
-                            if (zips.includes(zip)) {
-                                selectedZips.set(zip, "manual");
-                                map.data.overrideStyle(feature, { fillColor: 'red', fillOpacity: 0.6 });
-                            }
-                        });
-                        updateManualInfo();
-                    }
-                }
-            });
-
-            document.getElementById("clearButton").addEventListener("click", clearAllSelections);
-
-            document.getElementById("saveProfileButton").addEventListener("click", () => {
-                const profileName = document.getElementById("profileName").value.trim();
-                if (!profileName) return alert("Enter a name for this profile.");
-
-                if (selectedZips.size === 0) return alert("No ZIPs selected.");
-
-                const profileData = {};
-                selectedZips.forEach((role, zip) => profileData[zip] = role);
-                localStorage.setItem(`zipProfile_${profileName}`, JSON.stringify(profileData));
-                alert(`Saved profile "${profileName}"`);
-                updateCustomProfileDropdown();
-                document.getElementById("profileName").value = "";
-            });
-
-            document.getElementById("customProfileSelect").addEventListener("change", function () {
-                const selectedProfile = this.value;
-                if (!selectedProfile) return;
-
-                const stored = localStorage.getItem(`zipProfile_${selectedProfile}`);
-                if (!stored) return alert("Profile not found.");
-
-                const profileData = JSON.parse(stored);
-                selectedZips.clear();
-                map.data.revertStyle();
-
-                map.data.forEach(feature => {
-                    const zip = feature.getProperty("ZIP3").toString();
-                    const role = profileData[zip];
-                    if (role) {
-                        selectedZips.set(zip, role);
-                        map.data.overrideStyle(feature, {
-                            fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'orange',
-                            fillOpacity: 0.6
-                        });
-                    }
-                });
-
-                updateManualInfo();
-            });
-
-            loadCarrierData();
-            updateCustomProfileDropdown();
-        }
-
-        function updateCustomProfileDropdown() {
-            const dropdown = document.getElementById("customProfileSelect");
-            dropdown.innerHTML = '<option value="">Load Saved Profile</option>';
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith("zipProfile_")) {
-                    const name = key.replace("zipProfile_", "");
-                    const option = document.createElement("option");
-                    option.value = name;
-                    option.textContent = name;
-                    dropdown.appendChild(option);
-                }
-            });
-        }
-
-        function updateManualInfo() {
-            const display = Array.from(selectedZips.entries()).map(([zip, role]) => `${zip} (${role})`);
-            document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${display.length ? display.join(", ") : "None"}`;
-        }
-
-        function clearAllSelections() {
-            selectedZips.clear();
-            pickupZips.clear();
-            deliverZips.clear();
-            overlappingZips.clear();
-            currentCarrier = null;
-            map.data.revertStyle();
-            document.getElementById("carrierSelect").value = "";
             updateManualInfo();
-            updateCarrierInfo();
-        }
+        });
 
-        function loadCarrierData() {
-            pickupZips.clear();
-            deliverZips.clear();
-            overlappingZips.clear();
-            document.querySelectorAll("#carrierDataTable tbody tr").forEach(row => {
-                const pickupZip = row.cells[0].textContent.trim();
-                const deliverZip = row.cells[1].textContent.trim();
-                pickupZips.add(pickupZip);
-                deliverZips.add(deliverZip);
-                if (pickupZip === deliverZip) overlappingZips.add(pickupZip);
-            });
-        }
+        document.getElementById("carrierSelect").addEventListener("change", function() {
+            if (this.value === "veterans") {
+                currentCarrier = "veterans";
+                loadCarrierData();
+                setTimeout(highlightCarrierZips, 100);
+            } else {
+                clearCarrierSelection();
+            }
+        });
 
-        function highlightCarrierZips() {
-            map.data.forEach(feature => {
-                const zip = feature.getProperty("ZIP3").toString();
-                let style = { fillColor: 'blue', fillOpacity: 0.1 };
-                if (overlappingZips.has(zip)) {
-                    style.fillColor = 'purple';
-                    style.fillOpacity = 0.6;
-                } else if (pickupZips.has(zip)) {
-                    style.fillColor = 'green';
-                    style.fillOpacity = 0.4;
-                } else if (deliverZips.has(zip)) {
-                    style.fillColor = 'blue';
-                    style.fillOpacity = 0.4;
-                }
-                map.data.overrideStyle(feature, style);
-            });
-            updateCarrierInfo();
-        }
+        loadCarrierData();
+        updateCustomProfileDropdown();
+    }
 
-        function updateCarrierInfo() {
-            let carrierZipList = [];
-            pickupZips.forEach(zip => {
-                if (deliverZips.has(zip)) {
-                    carrierZipList.push(`${zip} (Both)`);
-                } else {
-                    carrierZipList.push(`${zip} (Pickup)`);
-                }
-            });
-            deliverZips.forEach(zip => {
-                if (!pickupZips.has(zip)) {
-                    carrierZipList.push(`${zip} (Deliver)`);
-                }
-            });
-            document.getElementById("carrierSelectionBox").innerHTML = `<b>Carrier ZIPs:</b> ${carrierZipList.length ? carrierZipList.join(", ") : "None"}`;
-        }
-    </script>
+    function updateCustomProfileDropdown() {
+        const dropdown = document.getElementById("customProfileSelect");
+        dropdown.innerHTML = '<option value="">Load Saved Profile</option>';
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith("zipProfile_")) {
+                const name = key.replace("zipProfile_", "");
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = name;
+                dropdown.appendChild(option);
+            }
+        });
+    }
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
+    function updateManualInfo() {
+        const display = Array.from(selectedZips.entries()).map(([zip, role]) => `${zip} (${role})`);
+        document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${display.length ? display.join(", ") : "None"}`;
+    }
+
+    function clearAllSelections() {
+        selectedZips.clear();
+        pickupZips.clear();
+        deliverZips.clear();
+        overlappingZips.clear();
+        currentCarrier = null;
+        profileMode = false;
+        map.data.revertStyle();
+        document.getElementById("carrierSelect").value = "";
+        updateManualInfo();
+        updateCarrierInfo();
+    }
+
+    function loadCarrierData() {
+        pickupZips.clear();
+        deliverZips.clear();
+        overlappingZips.clear();
+        document.querySelectorAll("#carrierDataTable tbody tr").forEach(row => {
+            const pickupZip = row.cells[0].textContent.trim();
+            const deliverZip = row.cells[1].textContent.trim();
+            pickupZips.add(pickupZip);
+            deliverZips.add(deliverZip);
+            if (pickupZip === deliverZip) overlappingZips.add(pickupZip);
+        });
+    }
+
+    function highlightCarrierZips() {
+        map.data.forEach(feature => {
+            const zip = feature.getProperty("ZIP3").toString();
+            let style = { fillColor: 'blue', fillOpacity: 0.1 };
+            if (overlappingZips.has(zip)) {
+                style.fillColor = 'purple';
+                style.fillOpacity = 0.6;
+            } else if (pickupZips.has(zip)) {
+                style.fillColor = 'green';
+                style.fillOpacity = 0.4;
+            } else if (deliverZips.has(zip)) {
+                style.fillColor = 'blue';
+                style.fillOpacity = 0.4;
+            }
+            map.data.overrideStyle(feature, style);
+        });
+        updateCarrierInfo();
+    }
+
+    function updateCarrierInfo() {
+        let carrierZipList = [];
+        pickupZips.forEach(zip => {
+            if (deliverZips.has(zip)) {
+                carrierZipList.push(`${zip} (Both)`);
+            } else {
+                carrierZipList.push(`${zip} (Pickup)`);
+            }
+        });
+        deliverZips.forEach(zip => {
+            if (!pickupZips.has(zip)) {
+                carrierZipList.push(`${zip} (Deliver)`);
+            }
+        });
+        document.getElementById("carrierSelectionBox").innerHTML = `<b>Carrier ZIPs:</b> ${carrierZipList.length ? carrierZipList.join(", ") : "None"}`;
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
 </body>
 </html>
