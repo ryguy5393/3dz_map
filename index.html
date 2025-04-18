@@ -130,6 +130,7 @@
   }
 
   function loadCarriers() {
+    const carrierZips = new Set();
     const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
     const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
     map.data.revertStyle();
@@ -140,6 +141,7 @@
           const zip = feature.getProperty("ZIP3");
           if (veteranZips.includes(zip)) {
             map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+            carrierZips.add(`${zip} (Both)`);
           }
         });
       } else {
@@ -152,11 +154,77 @@
           if (role) {
             const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
             map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
+            carrierZips.add(`${zip} (${role.charAt(0).toUpperCase() + role.slice(1)})`);
           }
         });
       }
     });
-  }
+    unction loadCarriers() {
+    const carrierZips = new Set();
+    const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
+    const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    map.data.revertStyle();
+    activeCarriers.forEach(value => {
+      if (value === "veterans") {
+        const veteranZips = ["452","460","461","462","463","464","465","466","467","468","469","479","480","481","482","483","489","490","491","492","493","494","495","498","506","507","520","521","524","527","528","530","531","532","534","535","537","538","539","540","541","542","543","544","545","546","547","549","550","551","553","554","555","559","560","563","600","601","602","603","604","605","606","607","608","609","610","611","612","613","614","615","616","617","618","619","620","622","625","626","627","630","631","633"];
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          if (veteranZips.includes(zip)) {
+            map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+            carrierZips.add(`${zip} (Both)`);
+          }
+        });
+      } else {
+        const stored = localStorage.getItem(`zipProfile_${value}`);
+        if (!stored) return;
+        const profileData = JSON.parse(stored);
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          const role = profileData[zip];
+          if (role) {
+            const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
+            map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
+            carrierZips.add(`${zip} (${role.charAt(0).toUpperCase() + role.slice(1)})`);
+          }
+        });
+        }
+    });
+function loadCarriers() {
+  const carrierZips = new Set();
+  const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
+  const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+  map.data.revertStyle();
+
+  activeCarriers.forEach(value => {
+    if (value === "veterans") {
+      const veteranZips = [/* ... */];
+      map.data.forEach(feature => {
+        const zip = feature.getProperty("ZIP3");
+        if (veteranZips.includes(zip)) {
+          map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+          carrierZips.add(`${zip} (Both)`);
+        }
+      });
+    } else {
+      const stored = localStorage.getItem(`zipProfile_${value}`);
+      if (!stored) return;
+      const profileData = JSON.parse(stored);
+      map.data.forEach(feature => {
+        const zip = feature.getProperty("ZIP3");
+        const role = profileData[zip];
+        if (role) {
+          const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
+          map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
+          carrierZips.add(`${zip} (${role.charAt(0).toUpperCase() + role.slice(1)})`);
+        }
+      });
+    }
+  });
+
+  // ✅ Moved here, so it works for all carriers
+  document.getElementById("carrierSelectionBox").innerHTML =
+    `<b>Carrier ZIPs:</b> ${carrierZips.size ? Array.from(carrierZips).join(", ") : "None"}`;
+}
 
   document.getElementById("carrierDropdownToggle").addEventListener("click", () => {
     const dropdown = document.getElementById("carrierDropdown");
