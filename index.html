@@ -138,7 +138,7 @@
         map.data.forEach(feature => {
           const zip = feature.getProperty("ZIP3");
           if (veteranZips.includes(zip)) {
-            map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
+            map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
           }
         });
       } else {
