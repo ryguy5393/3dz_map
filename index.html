@@ -137,7 +137,15 @@ function loadCarriers() {
 
   activeCarriers.forEach(value => {
     if (value === "veterans") {
-      const veteranZips = [/* your list of ZIPs */];
+      const veteranZips = [
+        "452","460","461","462","463","464","465","466","467","468","469",
+        "479","480","481","482","483","489","490","491","492","493","494","495",
+        "498","506","507","520","521","524","527","528","530","531","532","534",
+        "535","537","538","539","540","541","542","543","544","545","546","547",
+        "549","550","551","553","554","555","559","560","563","600","601","602",
+        "603","604","605","606","607","608","609","610","611","612","613","614",
+        "615","616","617","618","619","620","622","625","626","627","630","631","633"
+      ];
       map.data.forEach(feature => {
         const zip = feature.getProperty("ZIP3");
         if (veteranZips.includes(zip)) {
@@ -161,7 +169,6 @@ function loadCarriers() {
     }
   });
 
-  // ✅ Set the Carrier ZIPs display
   document.getElementById("carrierSelectionBox").innerHTML =
     `<b>Carrier ZIPs:</b> ${carrierZips.size ? Array.from(carrierZips).join(", ") : "None"}`;
 }
