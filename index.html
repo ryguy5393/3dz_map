@@ -171,17 +171,22 @@
 
   updateCarrierDropdown();
 
-  // ✅ Moved Clear All Selections logic inside initMap()
+ 
   document.getElementById("clearButton").addEventListener("click", () => {
     selectedZips.clear();
     map.data.forEach(f => map.data.revertStyle(f));
     updateManualInfo();
   });
 
-  // ✅ Add Clear All Selections functionality
+ 
   
 
 function initMap() {
+  document.getElementById("clearButton").addEventListener("click", () => {
+    selectedZips.clear();
+    map.data.forEach(f => map.data.revertStyle(f));
+    updateManualInfo();
+  });
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 4,
     center: { lat: 39.8283, lng: -98.5795 },
