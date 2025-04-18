@@ -60,6 +60,13 @@
       width: 12px;
       height: 12px;
       margin-right: 5px;
+      vertical-align: middle;
+    }
+    .legend-label {
+      margin-left: 5px;
+    }
+    #roleSelector {
+      display: none;
     }
     #carrierDataTable {
       display: none;
@@ -89,10 +96,10 @@
 
   <div class="legend">
     <b>Legend:</b><br>
-    <span style="background-color: green;"></span> Pickup<br>
-    <span style="background-color: blue;"></span> Deliver<br>
-    <span style="background-color: purple;"></span> Both<br>
-    <span style="background-color: red;"></span> Manual (toggle)<br>
+    <div><span style="background-color: green;"></span><span class="legend-label">Pickup</span></div>
+    <div><span style="background-color: blue;"></span><span class="legend-label">Deliver</span></div>
+    <div><span style="background-color: purple;"></span><span class="legend-label">Both</span></div>
+    <div><span style="background-color: red;"></span><span class="legend-label">Manual (toggle)</span></div>
   </div>
 
   <div id="manualSelectionBox" class="infoBox"><b>Selected ZIPs:</b> None</div>
@@ -105,15 +112,12 @@
   let pickupZips = new Set();
   let deliverZips = new Set();
   let overlappingZips = new Set();
-  let currentCarrier = null;
   let profileMode = false;
 
   function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
       zoom: 4,
       center: { lat: 39.8283, lng: -98.5795 },
-      mapTypeControl: true,
-      fullscreenControl: true,
     });
 
     map.data.loadGeoJson('https://raw.githubusercontent.com/ryguy5393/3dz_map/main/3_digit_zip_boundaries.geojson');
@@ -127,6 +131,7 @@
 
     map.data.addListener("click", event => {
       const zipCode = event.feature.getProperty("ZIP3").toString();
+
       if (profileMode) {
         const role = document.getElementById("roleSelector").value;
         selectedZips.set(zipCode, role);
@@ -143,6 +148,7 @@
           map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
         }
       }
+
       updateManualInfo();
     });
 
@@ -170,6 +176,7 @@
 
     document.getElementById("beginProfileButton").addEventListener("click", () => {
       profileMode = true;
+      document.getElementById("roleSelector").style.display = "block";
       document.getElementById("finalizeProfileButton").style.display = "block";
       document.getElementById("profileName").style.display = "block";
     });
@@ -178,27 +185,37 @@
       const profileName = document.getElementById("profileName").value.trim();
       if (!profileName) return alert("Enter a name for this profile.");
       if (selectedZips.size === 0) return alert("No ZIPs selected.");
+
       const profileData = {};
       selectedZips.forEach((role, zip) => profileData[zip] = role);
       localStorage.setItem(`zipProfile_${profileName}`, JSON.stringify(profileData));
-      alert(`Saved profile "${profileName}"`);
-      addProfileToDropdown(profileName);
+
+      const carrierSelect = document.getElementById("carrierSelect");
+      const option = document.createElement("option");
+      option.value = profileName;
+      option.textContent = profileName;
+      carrierSelect.appendChild(option);
+
       document.getElementById("profileName").value = "";
+      document.getElementById("roleSelector").style.display = "none";
       document.getElementById("finalizeProfileButton").style.display = "none";
       document.getElementById("profileName").style.display = "none";
       profileMode = false;
     });
 
-    document.getElementById("clearButton").addEventListener("click", clearAllSelections);
+    document.getElementById("clearButton").addEventListener("click", () => {
+      selectedZips.clear();
+      map.data.revertStyle();
+      updateManualInfo();
+    });
 
     document.getElementById("carrierSelect").addEventListener("change", function () {
       const selected = Array.from(this.selectedOptions).map(opt => opt.value);
       map.data.revertStyle();
+
       selected.forEach(value => {
         if (value === "veterans") {
-          currentCarrier = "veterans";
-          loadCarrierData();
-          highlightCarrierZips();
+          loadVeteranZips();
         } else {
           const stored = localStorage.getItem(`zipProfile_${value}`);
           if (!stored) return;
@@ -208,37 +225,13 @@
             const role = profileData[zip];
             if (role) {
               map.data.overrideStyle(feature, {
-                fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : role === "both" ? 'purple' : 'orange',
+                fillColor: role === "pickup" ? 'green' : role === "deliver" ? 'blue' : 'purple',
                 fillOpacity: 0.6
               });
             }
           });
         }
       });
-      updateCarrierInfo();
-    });
-
-    loadCarrierData();
-    updateCustomProfileDropdown();
-  }
-
-  function addProfileToDropdown(name) {
-    const carrierSelect = document.getElementById("carrierSelect");
-    const exists = Array.from(carrierSelect.options).some(opt => opt.value === name);
-    if (!exists) {
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = name;
-      carrierSelect.appendChild(option);
-    }
-  }
-
-  function updateCustomProfileDropdown() {
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith("zipProfile_")) {
-        const name = key.replace("zipProfile_", "");
-        addProfileToDropdown(name);
-      }
     });
   }
 
@@ -247,68 +240,16 @@
     document.getElementById("manualSelectionBox").innerHTML = `<b>Selected ZIPs:</b> ${display.length ? display.join(", ") : "None"}`;
   }
 
-  function clearAllSelections() {
-    selectedZips.clear();
-    pickupZips.clear();
-    deliverZips.clear();
-    overlappingZips.clear();
-    currentCarrier = null;
-    profileMode = false;
-    map.data.revertStyle();
-    document.getElementById("carrierSelect").selectedIndex = -1;
-    updateManualInfo();
-    updateCarrierInfo();
-  }
-
-  function loadCarrierData() {
-    pickupZips.clear();
-    deliverZips.clear();
-    overlappingZips.clear();
-    document.querySelectorAll("#carrierDataTable tbody tr").forEach(row => {
-      const pickupZip = row.cells[0].textContent.trim();
-      const deliverZip = row.cells[1].textContent.trim();
-      pickupZips.add(pickupZip);
-      deliverZips.add(deliverZip);
-      if (pickupZip === deliverZip) overlappingZips.add(pickupZip);
-    });
-  }
-
-  function highlightCarrierZips() {
+  function loadVeteranZips() {
+    const veteranZips = ["452","460","461","462","463","464","465","466","467","468","469","479","480","481","482","483","489","490","491","492","493","494","495","498","506","507","520","521","524","527","528","530","531","532","534","535","537","538","539","540","541","542","543","544","545","546","547","549","550","551","553","554","555","559","560","563","600","601","602","603","604","605","606","607","608","609","610","611","612","613","614","615","616","617","618","619","620","622","625","626","627","630","631","633"];
     map.data.forEach(feature => {
       const zip = feature.getProperty("ZIP3").toString();
-      let style = { fillColor: 'blue', fillOpacity: 0.1 };
-      if (overlappingZips.has(zip)) {
-        style.fillColor = 'purple';
-        style.fillOpacity = 0.6;
-      } else if (pickupZips.has(zip)) {
-        style.fillColor = 'green';
-        style.fillOpacity = 0.4;
-      } else if (deliverZips.has(zip)) {
-        style.fillColor = 'blue';
-        style.fillOpacity = 0.4;
-      }
-      map.data.overrideStyle(feature, style);
-    });
-  }
-
-  function updateCarrierInfo() {
-    let carrierZipList = [];
-    pickupZips.forEach(zip => {
-      if (deliverZips.has(zip)) {
-        carrierZipList.push(`${zip} (Both)`);
-      } else {
-        carrierZipList.push(`${zip} (Pickup)`);
+      if (veteranZips.includes(zip)) {
+        map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
       }
     });
-    deliverZips.forEach(zip => {
-      if (!pickupZips.has(zip)) {
-        carrierZipList.push(`${zip} (Deliver)`);
-      }
-    });
-    document.getElementById("carrierSelectionBox").innerHTML = `<b>Carrier ZIPs:</b> ${carrierZipList.length ? carrierZipList.join(", ") : "None"}`;
   }
 </script>
-
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSSpdMxUsQ_vuz80UNmA8p9BaBpdceQsQ&callback=initMap" async defer></script>
 </body>
 </html>
