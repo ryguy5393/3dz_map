@@ -31,7 +31,6 @@
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       width: 300px;
-      color: black;
     }
     #map {
       width: 100%;
@@ -139,7 +138,7 @@
         map.data.forEach(feature => {
           const zip = feature.getProperty("ZIP3");
           if (veteranZips.includes(zip)) {
-            map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
+            map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
           }
         });
       } else {
@@ -172,12 +171,16 @@
 
   updateCarrierDropdown();
 
-document.getElementById("clearButton").addEventListener("click", () => {
-  selectedZips.clear();
-  map.data.forEach(f => map.data.revertStyle(f));  // Revert every individual feature style
-  updateManualInfo();
-});
+  // ✅ Moved Clear All Selections logic inside initMap()
+  document.getElementById("clearButton").addEventListener("click", () => {
+    selectedZips.clear();
+    map.data.forEach(f => map.data.revertStyle(f));
+    updateManualInfo();
+  });
+
+  // ✅ Add Clear All Selections functionality
   
+
 function initMap() {
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 4,
@@ -206,7 +209,7 @@ function initMap() {
     } else {
       if (selectedZips.has(zipCode)) {
         selectedZips.delete(zipCode);
-         map.data.revertStyle(event.feature);
+        map.data.revertStyle(event.feature);
       } else {
         selectedZips.set(zipCode, "manual");
         map.data.overrideStyle(event.feature, { fillColor: 'red', fillOpacity: 0.6 });
