@@ -31,7 +31,6 @@
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       width: 300px;
-      color: black;
     }
     #map {
       width: 100%;
@@ -99,13 +98,16 @@
   </select>
   <button id="finalizeProfileButton" style="display:none;">Finalize & Save Profile</button>
   <input id="profileName" type="text" placeholder="Enter profile name" style="display:none;">
+  <button id="exportProfilesButton">💾 Export Profiles</button>
+  <input type="file" id="importProfilesInput" accept=".json" style="display:none;">
+  <button id="importProfilesButton">📁 Import Profiles</button>
 
   <div class="legend">
     <b>Legend:</b><br>
     <div><span style="background-color: green;"></span><span class="legend-label">Pickup</span></div>
     <div><span style="background-color: blue;"></span><span class="legend-label">Deliver</span></div>
     <div><span style="background-color: purple;"></span><span class="legend-label">Both</span></div>
-    <div><span style="background-color: red;"></span><span class="legend-label">Manual</span></div>
+    <div><span style="background-color: red;"></span><span class="legend-label">Manual (toggle)</span></div>
   </div>
 
   <div id="manualSelectionBox" class="infoBox"><b>Selected ZIPs:</b> None</div>
@@ -118,13 +120,6 @@
   let profileMode = false;
   const carrierList = { "veterans": "Veteran's" };
 
-  for (const key in localStorage) {
-  if (key.startsWith("zipProfile_")) {
-    const profileName = key.replace("zipProfile_", "");
-    carrierList[profileName] = profileName;
-  }
-}
-
   function updateCarrierDropdown() {
     const dropdown = document.getElementById("carrierDropdown");
     dropdown.innerHTML = "";
@@ -136,49 +131,35 @@
     }
   }
 
-function loadCarriers() {
-  const carrierZips = new Set();
-  const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
-  const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-  map.data.revertStyle();
+  function loadCarriers() {
+    const checkboxes = document.querySelectorAll('#carrierDropdown input[type="checkbox"]');
+    const activeCarriers = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    map.data.revertStyle();
+    activeCarriers.forEach(value => {
+      if (value === "veterans") {
+        const veteranZips = ["452","460","461","462","463","464","465","466","467","468","469","479","480","481","482","483","489","490","491","492","493","494","495","498","506","507","520","521","524","527","528","530","531","532","534","535","537","538","539","540","541","542","543","544","545","546","547","549","550","551","553","554","555","559","560","563","600","601","602","603","604","605","606","607","608","609","610","611","612","613","614","615","616","617","618","619","620","622","625","626","627","630","631","633"];
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          if (veteranZips.includes(zip)) {
+            map.data.overrideStyle(feature, { fillColor: 'orange', fillOpacity: 0.6 });
+          }
+        });
+      } else {
+        const stored = localStorage.getItem(`zipProfile_${value}`);
+        if (!stored) return;
+        const profileData = JSON.parse(stored);
+        map.data.forEach(feature => {
+          const zip = feature.getProperty("ZIP3");
+          const role = profileData[zip];
+          if (role) {
+            const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
+            map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
+          }
+        });
+      }
+    });
+  }
 
-  activeCarriers.forEach(value => {
-    if (value === "veterans") {
-      const veteranZips = [
-        "452","460","461","462","463","464","465","466","467","468","469",
-        "479","480","481","482","483","489","490","491","492","493","494","495",
-        "498","506","507","520","521","524","527","528","530","531","532","534",
-        "535","537","538","539","540","541","542","543","544","545","546","547",
-        "549","550","551","553","554","555","559","560","563","600","601","602",
-        "603","604","605","606","607","608","609","610","611","612","613","614",
-        "615","616","617","618","619","620","622","625","626","627","630","631","633"
-      ];
-      map.data.forEach(feature => {
-        const zip = feature.getProperty("ZIP3");
-        if (veteranZips.includes(zip)) {
-          map.data.overrideStyle(feature, { fillColor: 'purple', fillOpacity: 0.6 });
-          carrierZips.add(`${zip} (Both)`);
-        }
-      });
-    } else {
-      const stored = localStorage.getItem(`zipProfile_${value}`);
-      if (!stored) return;
-      const profileData = JSON.parse(stored);
-      map.data.forEach(feature => {
-        const zip = feature.getProperty("ZIP3");
-        const role = profileData[zip];
-        if (role) {
-          const color = role === "pickup" ? "green" : role === "deliver" ? "blue" : "purple";
-          map.data.overrideStyle(feature, { fillColor: color, fillOpacity: 0.6 });
-          carrierZips.add(`${zip} (${role.charAt(0).toUpperCase() + role.slice(1)})`);
-        }
-      });
-    }
-  });
-
-  document.getElementById("carrierSelectionBox").innerHTML =
-    `<b>Carrier ZIPs:</b> ${carrierZips.size ? Array.from(carrierZips).join(", ") : "None"}`;
-}
   document.getElementById("carrierDropdownToggle").addEventListener("click", () => {
     const dropdown = document.getElementById("carrierDropdown");
     dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
@@ -193,14 +174,50 @@ function loadCarriers() {
 
   updateCarrierDropdown();
 
- 
-  document.getElementById("clearButton").addEventListener("click", () => {
-    selectedZips.clear();
-    map.data.forEach(f => map.data.revertStyle(f));
-    updateManualInfo();
+  // ✅ Export profiles to JSON
+  document.getElementById("exportProfilesButton").addEventListener("click", () => {
+    const profiles = {};
+    for (const key in localStorage) {
+      if (key.startsWith("zipProfile_")) {
+        profiles[key] = JSON.parse(localStorage.getItem(key));
+      }
+    }
+    const blob = new Blob([JSON.stringify(profiles, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "carrier_profiles.json";
+    link.click();
+    URL.revokeObjectURL(url);
   });
 
- 
+  // ✅ Import profiles from JSON
+  document.getElementById("importProfilesButton").addEventListener("click", () => {
+    document.getElementById("importProfilesInput").click();
+  });
+
+  document.getElementById("importProfilesInput").addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const importedProfiles = JSON.parse(e.target.result);
+        for (const key in importedProfiles) {
+          localStorage.setItem(key, JSON.stringify(importedProfiles[key]));
+          const profileName = key.replace("zipProfile_", "");
+          carrierList[profileName] = profileName;
+        }
+        updateCarrierDropdown();
+        alert("Profiles imported successfully!");
+      } catch (err) {
+        alert("Invalid profile file.");
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  
   
 
 function initMap() {
