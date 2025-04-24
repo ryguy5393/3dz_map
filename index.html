@@ -118,6 +118,13 @@
   let profileMode = false;
   const carrierList = { "veterans": "Veteran's" };
 
+  for (const key in localStorage) {
+  if (key.startsWith("zipProfile_")) {
+    const profileName = key.replace("zipProfile_", "");
+    carrierList[profileName] = profileName;
+  }
+}
+
   function updateCarrierDropdown() {
     const dropdown = document.getElementById("carrierDropdown");
     dropdown.innerHTML = "";
